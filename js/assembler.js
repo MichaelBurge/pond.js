@@ -28,7 +28,7 @@ EXPRCLASS_PATTPTR = 0x4;
 EXPRCLASS_STACK = 0x5;
 
 class Assembler {
-    static enough_bytes_for_anybody { return 10000; }
+    static enough_bytes_for_anybody() { return 10000; }
     static assemble(text) {
         var buffer = new ArrayBuffer(this.enough_bytes_for_anybody());
         var dv = new DataView(buffer);
@@ -47,7 +47,7 @@ class Assembler {
     static disassemble(buffer) {
         output = "";
         var dv = new DataView(buffer);
-        for (int os = 0; os < buffer.byteLength;) {
+        for (var os = 0; os < buffer.byteLength;) {
             let { result: line, bytes: bytes } = self.disassemble_instruction(dv, os);
             output += line;
             output += "\n";
@@ -84,10 +84,12 @@ class Assembler {
         }
     }
     static get_token_metadata(token) {
-        if (token == "nop") { raise "don't call get_token_metadata() on nop instructions"; }
+        if (token == "nop") {
+            throw "don't call get_token_metadata() on nop instructions";
+        }
         if (ITABLE_BY_TOKEN == null) {
             ITABLE_BY_TOKEN = {};
-            for (int i = 0; i < ITABLE.length; i++) {
+            for (var i = 0; i < ITABLE.length; i++) {
                 let [opcode,arity,token] = ITABLE[i];
                 ITABLE_BY_TOKEN[token] = ITABLE[i];
             }
@@ -134,60 +136,61 @@ class Assembler {
             }
 
         }
-        raise "???";
+        throw "???";
     }
     
     static disassemble_instruction(dv, os) {
         var assembler = this;
         return isa_mapM(dv,os, self.bind(self.disassemble_expr), function(opcode, tokens) {
-            let [ opcode, arity, token ] = this.get_opcode_metadata(opcode);
+            let [ opcode2, arity, token ] = this.get_opcode_metadata(opcode);
             return ([ token ] + tokens).join(' ');
         });
         
     }
     static assemble_expr(dv, os, token) {
+        var arg;
         // imm
         if (/\d\d?\d?/.exec(token)) {
             dv.setUint8(dv, os, parseInt(token));
             return 1;
         }
         // reg
-        else if (var reg = /r(\d+)/.match(token)) {
-            dv.setUint8(dv, os, 128 + parseInt(reg));
+        else if (arg = /r(\d+)/.match(token)) {
+            dv.setUint8(dv, os, 128 + parseInt(arg));
             return 1;
         }
         // reg16
-        else if (var reg = /R(\d)/.match(token)) {
-            dv.setUint8(dv, os, 144 + parseInt(reg));
+        else if (arg = /R(\d)/.match(token)) {
+            dv.setUint8(dv, os, 144 + parseInt(arg));
             return 1;
         }
         // relptr
-        else if (var rel = /\[pc+(\d+)\]/.match(token)) {
+        else if (arg = /\[pc+(\d+)\]/.match(token)) {
             dv.setUint(dv, os, 152);
-            dv.setUint(dv, os+1, parseInt(rel));
+            dv.setUint(dv, os+1, parseInt(arg));
             return 2;
         }
         // nrelptr
-        else if (var rel = /\[pc-(\d+)\]/.match(token)) {
+        else if (arg = /\[pc-(\d+)\]/.match(token)) {
             dv.setUint(dv, os, 154);
-            dv.setUint(dv, os+1, parseInt(rel));
+            dv.setUint(dv, os+1, parseInt(arg));
             return 2;
         }
         // pattptr
-        else if (var rel = /0x([0-9a-f]+)/.match(token)) {
+        else if (arg = /0x([0-9a-f]+)/.match(token)) {
             dv.setUint(dv, os, 153);
-            dv.setUint32(dv, os+1, parseInt(rel));
+            dv.setUint32(dv, os+1, parseInt(arg));
             return 5;
         }
         // npattptr
-        else if (var rel = /-0x([0-9a-f]+)/.match(token)) {
+        else if (arg = /-0x([0-9a-f]+)/.match(token)) {
             dv.setUint(dv, os, 155);
-            dv.setUint32(dv, os+1, parseInt(rel));
+            dv.setUint32(dv, os+1, parseInt(arg));
             return 5;
         }
         // stack
-        else if (var rel = /[sp-([0-9a-f]+)/.match(token)) {
-            dv.setUint(dv, os, 148 + parseInt(rel));
+        else if (arg = /[sp-([0-9a-f]+)/.match(token)) {
+            dv.setUint(dv, os, 148 + parseInt(arg));
             return 1;
         }
         else {
@@ -202,7 +205,7 @@ class Assembler {
             case EXPRCLASS_RELPTR: return "[pc+" + arg.toString() + "]";
             case EXPRCLASS_PATTPTR: return (arg >= 0) ? "0x" + arg.toString(16) : "-0x" + (-arg).toString(16);
             case EXPRCLASS_STACK: return "[sp-" + arg.toString() + "]";
-            default: raise "unknown exprclass: " + exprclass.toString();
+            default: throw "unknown exprclass: " + exprclass.toString();
         }
     }
 }

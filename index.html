@@ -1,6 +1,6 @@
 <html>
   <style>
-    body {
+    main {
       display: flex;
     }
     .sidebar {
@@ -9,15 +9,31 @@
     main {
     flex-basis: 70%;
     }
+    table, tr, td {
+    border: 1px solid black;
+    }
   </style>
   <body id="pond-root">
-    <div class="assembler">
-    </div>
-    <div class="disassembler">
-    </div>
+    <h3>If you're on Chrome, enable ES6</h3>
+    <table>
+      <tr><td>Chrome</td><td>chrome://flags/#enable-javascript-harmony</td></tr>
+    </table>
+    <main>
+      <div class="assembler">
+      </div>
+      <div class="disassembler">
+      </div>
+    </main>
     <script src="js/executor.js"></script>
     <script src="js/program.js"></script>
     <script src="js/assembler.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/test.js"></script>
+    <script src="js/utils.js"></script>
+    
+    <!-- Uncomment to run unit tests -->
+    <script>
+      Test.all();
+    </script>
   </body>
 </html>
