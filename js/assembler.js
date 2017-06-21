@@ -30,6 +30,7 @@ EXPRCLASS_STACK = 0x5;
 class Assembler {
     static enough_bytes_for_anybody() { return 10000; }
     static assemble(text) {
+        var asm = this;
         var buffer = new ArrayBuffer(this.enough_bytes_for_anybody());
         var dv = new DataView(buffer);
         var lines = text.split(/\n/);
@@ -39,45 +40,49 @@ class Assembler {
             if (tokens.length == 0) {
                 return;
             } else {
-                os += this.assemble_instruction(dv, os, tokens);
+                os += asm.assemble_instruction(dv, os, tokens);
             }
         });
-        return ArrayBuffer.transfer(buffer, os);
+        return buffer.slice(0, os);
     }
     static disassemble(buffer) {
-        output = "";
+        var output = "";
         var dv = new DataView(buffer);
         for (var os = 0; os < buffer.byteLength;) {
-            let { result: line, bytes: bytes } = self.disassemble_instruction(dv, os);
+            let { result: line, bytes: bytes } = this.disassemble_instruction(dv, os);
             output += line;
             output += "\n";
+            os += bytes;
         }
         return output;
     }
     static assemble_instruction(dv, os, tokens) {
         var asm = this;
+        var original_os = os;
         var arityk = function(n, k) {
             dv.setUint8(os, n); os += 1;
             for (var i = 0; i < k; i++) {
                 os += asm.assemble_expr(dv, os, tokens.shift());
             }
         };
-        token = tokens.shift();
+        var token = tokens.shift();
         switch (token) {
             case "nop":
-                dv.setUint8(os, parseInt(tokens.shift(), 16)); os += 1;
+                var arg_token = tokens.shift();
+                var arg = parseInt(arg_token, 16);
+                dv.setUint8(os, arg); os += 1;
                 break;
             case "noppatt":
                 break;
             default:
-                [opcode, arity, ] = this.get_token_metadata(token);
+                let [opcode, arity, ] = this.get_token_metadata(token);
                 arityk(opcode, arity);
                 break;
         }
-        return os;
+        return os - original_os;
     }
     static get_opcode_metadata(opcode) {
-        if (opcode >= table.length) {
+        if (opcode >= ITABLE.length) {
             return [ opcode, 0, "nop " + opcode.toString(16) ];
         } else {
             return ITABLE[opcode];
@@ -101,9 +106,9 @@ class Assembler {
     static isa_mapM(dv, os, expr_act, op_act) {
         var asm = this;
         var original_os = os;
-        opcode = dv.getUint8(os); os += 1;
+        var opcode = dv.getUint8(os); os += 1;
         var arityk = function(k) {
-            args = Utils.range(k).map(function(x) {
+            var args = Utils.range(k).map(function(x) {
                 let {result, bytes} = asm.expr_mapM(dv, os, expr_act); os += bytes;
                 return result;
             });
@@ -111,9 +116,9 @@ class Assembler {
         };
         
         if (opcode == 0x0f) {
-            return { result: op_act(0x0f, dn.getUint32(os)), bytes: 5 };
+            return { result: op_act(0x0f, dv.getUint32(os)), bytes: 5 };
         } else {
-            let [opcode, arity, token] = get_opcode_metadata(opcode);
+            let [opcode2, arity, token] = this.get_opcode_metadata(opcode);
             return arityk(arity);
         }
     }
@@ -132,7 +137,7 @@ class Assembler {
                 case 154: return { result: expr_act(EXPRCLASS_RELPTR, -dv.getUint8(os)), bytes: 2 };
                 case 153: return { result: expr_act(EXPRCLASS_PATTPTR, dv.getUint32(os)), bytes: 5 };
                 case 155: return { result: expr_act(EXPRCLASS_PATTPTR, -dv.getUint32(os)), bytes: 5 };
-                default: return { result: expr_act(EXPRCLASS_STACK, arg1 - 256), bytes: 1 };
+                default: return { result: expr_act(EXPRCLASS_STACK, arg1 - 148), bytes: 1 };
             }
 
         }
@@ -140,10 +145,10 @@ class Assembler {
     }
     
     static disassemble_instruction(dv, os) {
-        var assembler = this;
-        return isa_mapM(dv,os, self.bind(self.disassemble_expr), function(opcode, tokens) {
-            let [ opcode2, arity, token ] = this.get_opcode_metadata(opcode);
-            return ([ token ] + tokens).join(' ');
+        var asm = this;
+        return this.isa_mapM(dv,os, function(exprclass, arg) { return asm.disassemble_expr(exprclass, arg); }, function(opcode, tokens) {
+            let [ opcode2, arity, token ] = asm.get_opcode_metadata(opcode);
+            return [ token ].concat(tokens).join(' ');
         });
         
     }
