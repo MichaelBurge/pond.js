@@ -5,7 +5,7 @@ class Test {
         let test = this;
         test.test_instructions();
         test.test_opcodes();
-        TestUtils.minimize(1024, function(size) {
+        TestUtils.minimize(5000, function(size) {
             BUFFER = TestUtils.arbitrary_buffer(1024);
             test.test_assembler(size);
         });
@@ -13,8 +13,7 @@ class Test {
     }
     static test_instructions() {
         let previously_problematic_instructions = [
-            //"xor 91 91\n",
-            //"noppatt 0x40125638\n"
+            "xor 91 91\n",
         ];
         previously_problematic_instructions.forEach(function (expected) {
             let buffer = Assembler.assemble(expected);

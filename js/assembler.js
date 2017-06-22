@@ -32,7 +32,7 @@ class Assembler {
     static assemble(text) {
         let asm = this;
         let buffer = new ArrayBuffer(this.enough_bytes_for_anybody());
-        let dv = new PaddedSeqView(buffer);
+        let dv = new RingView(buffer);
         let lines = text.split(/\n/);
         lines.forEach(function(line) {
             let tokens = line.split(/ /).filter(function(token) { return token.length > 0; });
@@ -46,7 +46,7 @@ class Assembler {
     }
     static disassemble(buffer) {
         let output = "";
-        let dv = new PaddedSeqView(buffer);
+        let dv = new RingView(buffer);
         while (! dv.is_done()) {
             let line = this.disassemble_instruction(dv);
             output += line;
