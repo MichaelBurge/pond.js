@@ -128,7 +128,7 @@ class Assembler {
                 case 154: return expr_act(EXPRCLASS_RELPTR, -dv.getUint8());
                 case 153: return expr_act(EXPRCLASS_PATTPTR, dv.getUint32());
                 case 155: return expr_act(EXPRCLASS_NPATTPTR, dv.getUint32());
-                default: return expr_act(EXPRCLASS_STACK, arg1 - 148);
+                default: return expr_act(EXPRCLASS_STACK, arg1 - 155);
             }
         }
         throw "???";
@@ -162,7 +162,7 @@ class Assembler {
             return 1;
         }
         // relptr
-        else if (arg = /\[pc+(\d+)\]/.exec(token)) {
+        else if (arg = /\[pc\+(\d+)\]/.exec(token)) {
             let [ text, os ] = arg;
             dv.setUint8(152);
             dv.setUint8(parseInt(os));
@@ -203,7 +203,8 @@ class Assembler {
             case EXPRCLASS_REG: return "r" + arg.toString();
             case EXPRCLASS_REG16: return "R" + (arg * 2).toString();
             case EXPRCLASS_RELPTR: return "[pc+" + arg.toString() + "]";
-            case EXPRCLASS_PATTPTR: return (arg >= 0) ? "0x" + arg.toString(16) : "-0x" + (-arg).toString(16);
+            case EXPRCLASS_PATTPTR: return "0x" + arg.toString(16);
+            case EXPRCLASS_NPATTPTR: return "-0x" + arg.toString(16);
             case EXPRCLASS_STACK: return "[sp-" + arg.toString() + "]";
             default: throw "unknown exprclass: " + exprclass.toString();
         }

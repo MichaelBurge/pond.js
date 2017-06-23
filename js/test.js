@@ -6,7 +6,7 @@ class Test {
         test.test_instructions();
         test.test_opcodes();
         TestUtils.minimize(5000, function(size) {
-            BUFFER = TestUtils.arbitrary_buffer(1024);
+            BUFFER = TestUtils.arbitrary_buffer(5000);
             test.test_assembler(size);
         });
 

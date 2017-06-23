@@ -81,12 +81,11 @@ class RingView {
         this.dv.setUint8(1, b);
     }
     getUint32() {
-        let ret;
         let a = this.getUint8();
         let b = this.getUint8();
         let c = this.getUint8();
         let d = this.getUint8();
-        return a << 24 + b << 16 + c << 8 + d;
+        return (a << 24) | (b << 16) | (c << 8) | d;
     }
     setUint32(value) {
         this.dv.setUint32(this.os, value);
