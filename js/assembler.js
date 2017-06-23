@@ -70,7 +70,20 @@ class Assembler {
                     let arg = Utils.read_hex(arg_token);
                     dv.setUint8(arg);
                 }
-                    break;
+                break;
+            case "lit":
+                {
+                    tokens.forEach(x => {
+                        dv.setUint8(parseInt(x, 16));
+                    });
+                }
+            case "birth":
+                {
+                    let arg_token = tokens.shift();
+                    let arg = Utils.read_hex(arg_token);
+                    dv.setUint32(arg);
+                }
+                break;
             default:
                 let [opcode, arity, ] = this.get_token_metadata(token);
                 arityk(opcode, arity);
@@ -111,7 +124,12 @@ class Assembler {
         };
         
         let [opcode2, arity, token] = this.get_opcode_metadata(opcode);
-        return arityk(arity);
+        if (token == "birth") {
+            let arg = dv.getUint32();
+            return op_act(opcode, arg);
+        } else {
+            return arityk(arity);
+        }
     }
 
     static expr_mapM(dv, expr_act) {
@@ -128,6 +146,7 @@ class Assembler {
                 case 154: return expr_act(EXPRCLASS_RELPTR, -dv.getUint8());
                 case 153: return expr_act(EXPRCLASS_PATTPTR, dv.getUint32());
                 case 155: return expr_act(EXPRCLASS_NPATTPTR, dv.getUint32());
+                case 156: return expr_act(EXPRCLASS_ABSPTR, dv.getUint16());
                 default: return expr_act(EXPRCLASS_STACK, arg1 - 155);
             }
         }
@@ -156,6 +175,15 @@ class Assembler {
             return 1;
         }
         // reg16
+        else if (token == "pc") {
+            return this.assemble_expr(dv, "R0");
+        }
+        else if (token == "sp") {
+            return this.assemble_expr(dv, "R1");
+        }
+        else if (token == "cp") {
+            return this.assemble_expr(dv, "R2");
+        }
         else if (arg = /R(\d)/.exec(token)) {
             let [ text, reg_id ] = arg;
             dv.setUint8(144 + parseInt(reg_id));
@@ -187,6 +215,10 @@ class Assembler {
             dv.setUint32(Utils.read_hex(arg));
             return 5;
         }
+        // absptr
+        else if (arg = /\[R(0-9)+\]/.exec(token)) {
+            dv.setUint8(156 + arg);
+        }
         // stack
         else if (arg = /\[sp-([0-9a-f]+)\]/.exec(token)) {
             let [ text, os ] = arg;
@@ -201,10 +233,17 @@ class Assembler {
         switch (exprclass) {
             case EXPRCLASS_IMM: return arg.toString();
             case EXPRCLASS_REG: return "r" + arg.toString();
-            case EXPRCLASS_REG16: return "R" + (arg * 2).toString();
+            case EXPRCLASS_REG16:
+                switch (arg) {
+                    case 0: return "pc";
+                    case 1: return "sp";
+                    case 2: return "cp";
+                    default: return "R" + (arg * 2).toString();
+                }
             case EXPRCLASS_RELPTR: return "[pc+" + arg.toString() + "]";
             case EXPRCLASS_PATTPTR: return "0x" + arg.toString(16);
             case EXPRCLASS_NPATTPTR: return "-0x" + arg.toString(16);
+            case EXPRCLASS_ABSPTR: return "[R" + arg.toString() + "]";
             case EXPRCLASS_STACK: return "[sp-" + arg.toString() + "]";
             default: throw "unknown exprclass: " + exprclass.toString();
         }

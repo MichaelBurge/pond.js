@@ -98,6 +98,7 @@ class RingView {
             return this.os + os;
         }
     }
+    seek(x) { this.os = x; }
     search(max, patt, direction) {
         let rv = this;
         for (var os = 0; os < max; os++) {
@@ -116,5 +117,14 @@ class RingView {
             this.os = this.eval_relptr(direction);
         }
         return null;
+    }
+    slice(os, size) {
+        let old_rv = this;
+        let ret = new ArrayBuffer(size);
+        let new_rv = new RingView(ret);
+        old_rv.with_absptr(os, () => {
+            new_rv.setUint8(old_rv.getUint8());
+        });
+        return ret;
     }
 }

@@ -5,6 +5,7 @@ class Test {
         let test = this;
         test.test_instructions();
         test.test_opcodes();
+        test.test_copier_program();
         TestUtils.minimize(5000, function(size) {
             BUFFER = TestUtils.arbitrary_buffer(5000);
             test.test_assembler(size);
@@ -42,6 +43,26 @@ class Test {
         actual = actual.slice(0, size);
         TestUtils.assert_buffer_equal(expected, actual, disassembled);
         // Ideally, we'd test disassemble(assemble(x :: Arbitrary BinaryAST)) == x, but code isn't structured for that.
+    }
+    static test_copier_program() {
+        let copier = `
+            mov pc R14
+            mov 0 R12
+            jump 4
+            lit ff ff ff ff
+            mov R14 R10
+            add R12 R10
+            mov [R10] [R2]
+            add 1 R12
+            jump -0xffffffff
+            birth 0xc07fefe0
+            kill
+            lit c0 7f ef e0`;
+        let expected = Assembler.assemble(copier);
+        let executor = new ProgramExecutor(expected);
+        executor.run(300);
+        let actual = executor.get_child() || (()=>{throw "No child program";})();
+        TestUtils.assert_buffer_equal(expected, actual, Assembler.disassemble(actual));
     }
 }
 
