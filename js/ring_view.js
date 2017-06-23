@@ -19,6 +19,27 @@ class RingView {
     maybe_wrap() {
         this.os = eval_relptr();
     }
+    with_relptr(relptr, block) {
+        let original_os = this.os;
+        this.os = this.eval_relptr(relptr);
+        let ret = block();
+        this.os = original_os;
+        return ret;
+    }
+    with_absptr(absptr, block) {
+        let original_os = this.os;
+        this.os = 0;
+        this.os = this.eval_relptr(absptr);
+        let ret = block();
+        this.os = original_os;
+        return ret;
+    }
+    peek_absptr8(absptr) {
+        return this.with_absptr(absptr, () => { return program.rv.peekUint8() });
+    }
+    peek_relptr8(relptr) {
+        return this.with_relptr(relptr, () => { return program.rv.peekUint8() });
+    }
     peekUint8() {
         let ret;
         if (this.os >= this.buffer.byteLength) {
@@ -35,24 +56,37 @@ class RingView {
     }
         
     setUint8(value) {
-        this.dv.setUint8(this.os, value);
+        this.pokeUint8(value);
         this.os = this.eval_relptr(1);
+    }
+    pokeUint8(value) {
+        this.dv.setUint8(this.os, value);
+    }
+    peekInt16() {
+        let a = this.dv.getUint8(0);
+        let b = this.dv.getUint8(1);
+        let x1 = this.getUint8();
+        let x2 = this.getUint8();
+        let ret = this.dv.getInt16(0);
+        this.dv.setUint8(0, a);
+        this.dv.setUint8(1, b);
+    }
+    setInt16(value) {
+        let a = this.dv.getUint8(0);
+        let b = this.dv.getUint8(1);
+        this.dv.setInt16(0, value);
+        this.setUint8(value, this.dv.getUint8(0));
+        this.setUint8(value, this.dv.getUint8(1));
+        this.dv.setUint8(0, a);
+        this.dv.setUint8(1, b);
     }
     getUint32() {
         let ret;
-        if (this.os >= this.buffer.byteLength) {
-            ret = 0;
-        } else if (this.os+1 >= this.buffer.byteLength) {
-            ret = this.dv.getUint8(this.os) << 24;
-        } else if (this.os+2 >= this.buffer.byteLength) {
-            ret = this.dv.getUint16(this.os) << 16;
-        } else if (this.os+3 >= this.buffer.byteLength) {
-            ret = (this.dv.getUint16(this.os) << 16 + this.dv.getUint8(this.eval_relptr(2))) << 8;
-        } else {
-            ret = this.dv.getUint32(this.os);
-        }
-        this.os = this.eval_relptr(4);
-        return ret;
+        let a = this.getUint8();
+        let b = this.getUint8();
+        let c = this.getUint8();
+        let d = this.getUint8();
+        return a << 24 + b << 16 + c << 8 + d;
     }
     setUint32(value) {
         this.dv.setUint32(this.os, value);
@@ -60,9 +94,28 @@ class RingView {
     }
     eval_relptr(os) {
         if (this.is_ring) {
-            return (this.os + os) % this.buffer.byteLength;
+            return (this.os + this.buffer.byteLength + os) % this.buffer.byteLength;
         } else {
             return this.os + os;
         }
+    }
+    search(max, patt, direction) {
+        let rv = this;
+        for (var os = 0; os < max; os++) {
+            let success = this.with_relptr(os * direction, () => {
+                let success = true;
+                patt.forEach(x => {
+                    if (rv.getUint8() != x) {
+                        success = false;
+                    }
+                });
+                return success;
+            });
+            if (success) {
+                return os * direction;
+            }
+            this.os = this.eval_relptr(direction);
+        }
+        return null;
     }
 }

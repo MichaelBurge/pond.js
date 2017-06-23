@@ -17,7 +17,7 @@ class Test {
         ];
         previously_problematic_instructions.forEach(function (expected) {
             let buffer = Assembler.assemble(expected);
-            console.log(new Uint8Array(buffer).join(' '));
+            //console.log(new Uint8Array(buffer).join(' '));
             let actual = Assembler.disassemble(buffer);
             TestUtils.assert_equal(expected, actual, "");
         });

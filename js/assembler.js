@@ -4,17 +4,17 @@ ITABLE = [
     [ 0x01, 1, "jump" ],
     [ 0x02, 2, "add" ],
     [ 0x03, 2, "mov" ],
-    [ 0x04, 2, "write" ],
+    [ 0x04, 2, "sub" ],
     [ 0x05, 0, "birth" ],
     [ 0x06, 2, "xor" ],
     [ 0x07, 2, "and" ],
     [ 0x08, 2, "or" ],
     [ 0x09, 1, "neg" ],
-    [ 0x0a, 3, "gt" ],
-    [ 0x0b, 3, "eq" ],
-    [ 0x0c, 3, "lt" ],
-    [ 0x0d, 2, "nz" ],
-    [ 0x0e, 2, "z" ],
+    [ 0x0a, 2, "gt" ],
+    [ 0x0b, 2, "eq" ],
+    [ 0x0c, 2, "lt" ],
+    // [ 0x0d, 1, "nz" ],
+    // [ 0x0e, 1, "z" ],
 ];
 
 ITABLE_BY_TOKEN = null;
@@ -34,7 +34,7 @@ class Assembler {
         let buffer = new ArrayBuffer(this.enough_bytes_for_anybody());
         let dv = new RingView(buffer);
         let lines = text.split(/\n/);
-        lines.forEach(function(line) {
+        lines.forEach(line => {
             let tokens = line.split(/ /).filter(function(token) { return token.length > 0; });
             if (tokens.length == 0) {
                 return;
@@ -103,7 +103,7 @@ class Assembler {
         let asm = this;
         let opcode = dv.getUint8();
         let arityk = function(k) {
-            let args = Utils.range(k).map(function(x) {
+            let args = Utils.range(k).map(x => {
                 let result = asm.expr_mapM(dv, expr_act);
                 return result;
             });

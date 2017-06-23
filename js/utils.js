@@ -25,4 +25,12 @@ class Utils {
                (x & 0x0000ff00) << 8 +
                (x & 0x000000ff) << 24;
     }
+    static split_uint32(x) {
+        return [
+            (x & 0xff000000) >> 24,
+            (x & 0x00ff0000) >> 16,
+            (x & 0x0000ff00) >> 8,
+            (x & 0x000000ff) >> 0
+        ];
+    }
 }
