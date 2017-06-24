@@ -3,35 +3,64 @@ BUFFER = null
 class Test {
     static all() {
         let test = this;
+        test.test_ringview();
         test.test_instructions();
-        test.test_opcodes();
-        test.test_copier_program();
+        //test.test_copier_program();
         TestUtils.minimize(5000, function(size) {
             BUFFER = TestUtils.arbitrary_buffer(5000);
-            test.test_assembler(size);
+            //test.test_assembler(size);
         });
 
     }
+    static test_ringview() {
+        // Bug #1: Javascript bitwise operators are signed
+        {
+            let buf = new ArrayBuffer(4);
+            let rv = new RingView(buf);
+            let expected = 0xffffffff;
+            rv.setUint32(expected);
+            rv.seek(0);
+            let actual = rv.getUint32();
+            TestUtils.assert_equal(expected, actual, "");
+        }
+        // Bug #2: Forward slice
+        {
+            let buf = new ArrayBuffer(2);
+            let rv = new RingView(buf, true);
+            rv.setUint8(0xff);
+            rv.setUint8(0xaa);
+            let copy = new RingView(rv.forward_slice(2));
+            let a = copy.getUint8();
+            let b = copy.getUint8();
+            TestUtils.assert_equal(0xff, a, "");
+            TestUtils.assert_equal(0xaa, b, "");
+        }
+    }
     static test_instructions() {
         let previously_problematic_instructions = [
-            "xor 91 91\n",
+            [ "xor 91 91\n", [ 0x06, 91, 91 ], true],
+            [ "lit 05 ff 06 ff\n", [ 0x05, 0xff, 0x06, 0xff ], false],
+            [ "jump -0xffffffff\n", [ 0x01, 155, 0xff, 0xff, 0xff, 0xff ], true],
+            [ "mov [R5] [cp]\n", [ 0x03, 144+5, 144+2], true],
         ];
-        previously_problematic_instructions.forEach(function (expected) {
-            let buffer = Assembler.assemble(expected);
+        
+        previously_problematic_instructions.forEach(([ expected_asm, expected_bytecode, is_invertible ]) => {
+            let expected_buffer = new Uint8Array(expected_bytecode).buffer;
+            let actual_buffer = Assembler.assemble(expected_asm);
             //console.log(new Uint8Array(buffer).join(' '));
-            let actual = Assembler.disassemble(buffer);
-            TestUtils.assert_equal(expected, actual, "");
-        });
-    }
-    static test_opcodes() {
-        let previously_problematic_opcodes = [
-            [ 0x7 ],
-        ];
-        previously_problematic_opcodes.forEach(function (bytes) {
-            let expected = new Uint8Array(bytes).buffer;
-            let disassembled = Assembler.disassemble(expected);
-            let actual = Assembler.assemble(disassembled).slice(0, expected.byteLength);
-            TestUtils.assert_buffer_equal(expected, actual, disassembled);
+            // assemble(disassemble(assemble(x))) = x, but disassemble(assemble(y)) is not necessarily y.
+            // additionally, the output buffer may be 1-3 bytes longer, because of multi-byte instructions
+            if (is_invertible) {
+                let actual_asm = Assembler.disassemble(actual_buffer);
+                TestUtils.assert_buffer_equal(expected_buffer, actual_buffer, actual_asm);
+                TestUtils.assert_equal(expected_asm, actual_asm, "");
+            } else {
+                let actual_asm = Assembler.disassemble(actual_buffer);
+                let bytes = new Uint8Array(actual_buffer.buffer);
+                TestUtils.assert_buffer_equal(expected_buffer, actual_buffer.slice(0, expected_buffer.byteLength), actual_asm);
+                TestUtils.assert_buffer_equal(expected_buffer, Assembler.assemble(actual_asm).slice(0, expected_buffer.byteLength), "");
+            }
+
         });
     }
     static test_assembler(size) {
@@ -46,14 +75,15 @@ class Test {
     }
     static copier_program() {
         return `
-            mov pc R14
-            mov 0 R12
+            mov pc R7
+            mov 0 R6
+            eq 0 0
             jump 4
             lit ff ff ff ff
-            mov R14 R10
-            add R12 R10
-            mov [R10] [R2]
-            add 1 R12
+            mov R7 R5
+            add R6 R5
+            mov [R5] [R2]
+            add 1 R6
             jump -0xffffffff
             birth 0xc07fefe0
             kill
@@ -62,6 +92,7 @@ class Test {
     static test_copier_program() {
         let copier = this.copier_program();
         let expected = Assembler.assemble(copier);
+        //TestUtils.assert_equal(copier, Assembler.disassemble(expected));
         let executor = new ProgramExecutor(expected);
         executor.run(300);
         let actual = executor.get_child() || (()=>{throw "No child program";})();

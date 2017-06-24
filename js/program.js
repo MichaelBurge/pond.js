@@ -8,6 +8,7 @@ FLAG_TEST = 0x01;
 class Program {
     constructor(executor) {
         this.executor = executor;
+        this.rv = executor.rv;
         this.reg8s = new Uint8Array(16);
         this.reg16s = new Int16Array(this.reg8s.buffer);
     }
@@ -39,9 +40,9 @@ class Program {
         this.executor.kill(this);
     }
 
-    jump([ exprclass, val ]) {
-        if ((this.status() & FLAG_JUMP) > 0) {
-            this.reg16s[REG16_PC] += val;
+    jump([relptr]) {
+        if ((this.status() & FLAG_TEST) > 0) {
+            this.rv.os = this.rv.eval_relptr(this.resolve_expr(relptr));
         }
     }
 
@@ -83,42 +84,44 @@ class Program {
         return val;
     }
     binop_assign(src, dest, combine) {
-        let val = binop(src, dest, combine);
+        let val = this.binop(src, dest, combine);
         this.assign(src[0], val, dest[0], dest[2]);
     }
-                
+
+    resolve_expr([ exprclass, [x8, x16]]) { return (this.exprclass_size(exprclass) == 1) ? x8 : x16; }
+    
     evaluate_expression(exprclass, arg) {
-        let program = this;
+        let pr = this;
         let dup = x => { return [ x, x ]; };
         let get_values = function () {
             switch (exprclass) {
                 case EXPRCLASS_IMM: return dup(arg);
-                case EXPRCLASS_REG: return dup(this.reg8s[arg]);
-                case EXPRCLASS_REG16: return dup(this.reg16s[arg]);
+                case EXPRCLASS_REG: return dup(pr.reg8s[arg]);
+                case EXPRCLASS_REG16: return dup(pr.reg16s[arg]);
                 case EXPRCLASS_RELPTR: return [
-                    this.rv.with_relptr(arg, () => { return program.read_size(1); }),
-                    this.rv.with_relptr(arg, () => { return program.read_size(2); })
+                    pr.rv.with_relptr(arg, () => { return pr.read_size(1); }),
+                    pr.rv.with_relptr(arg, () => { return pr.read_size(2); })
                 ];
                 case EXPRCLASS_PATTPTR:
                 case EXPRCLASS_NPATTPTR:
                     let direction = (exprclass == EXPRCLASS_PATTPTR) ? 1 : -1;
-                    let relptr = this.search_patt(arg, direction);
+                    let relptr = pr.search_patt(arg, direction);
                     return [
-                        this.rv.with_relptr(relptr, () => { return program.read_size(1); }),
-                        this.rv.with_relptr(relptr, () => { return program.read_size(2); })
+                        pr.rv.with_relptr(relptr, () => { return pr.read_size(1); }),
+                        pr.rv.with_relptr(relptr, () => { return pr.read_size(2); })
                     ];
                 case EXPRCLASS_ABSPTR: return [
-                    this.rv.with_absptr(this.reg16s[arg], () => { return program.read_size(1); }),
-                    this.rv.with_absptr(this.reg16s[arg], () => { return program.read_size(2); })
+                    pr.rv.with_absptr(pr.reg16s[arg], () => { return pr.read_size(1); }),
+                    pr.rv.with_absptr(pr.reg16s[arg], () => { return pr.read_size(2); })
                 ];
                 case EXPRCLASS_STACK:
                     return [
-                        this.with_sp(arg, () => { return program.read_size(1); }),
-                        this.with_sp(arg, () => { return program.read_size(2); })
+                        pr.with_sp(arg, () => { return pr.read_size(1); }),
+                        pr.with_sp(arg, () => { return pr.read_size(2); })
                     ];
             }
         };
-        return [ exprclass, get_value(), arg ];
+        return [ exprclass, get_values(), arg ];
     };
     assign(val_exprclass, val, dest_exprclass, dest) {
         let program = this;
@@ -175,9 +178,9 @@ class Program {
     }
     read_size(size) {
         if (size == 1) {
-            this.rv.getUint8(x);
+            this.rv.getUint8();
         } else {
-            this.rv.getInt16(x);
+            this.rv.getInt16();
         }
     }
     set_flag(flag, value) {

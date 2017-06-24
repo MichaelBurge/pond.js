@@ -11,6 +11,9 @@ class ProgramExecutor extends Executor {
         super();
         this.memory = new ArrayBuffer(10000);
         this.rv = new RingView(this.memory);
+        let bytecode_rv = new RingView(bytecode);
+        bytecode_rv.copy(this.rv, bytecode.byteLength);
+        this.rv.seek(0);
         this.program = new Program(this);
         this.program.cp(9000);
         this.running = true;
@@ -18,7 +21,7 @@ class ProgramExecutor extends Executor {
     }
     get_child() { return this.child; }
     step() {
-        this.rv.seek(this.program.pc);
+        this.rv.seek(this.program.pc());
         this.program.step(this.rv);
     }
     run(max_steps) {
@@ -31,6 +34,6 @@ class ProgramExecutor extends Executor {
         this.running = false;
     }
     birth(bytecode) {
-        this.child = program;
+        this.child = bytecode;
     }
 }

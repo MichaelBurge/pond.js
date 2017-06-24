@@ -17,12 +17,10 @@ class Main {
         set("cp", program.cp().toString(16));
         set("st", program.status().toString(2));
         set("rng", program.rng().toString());
-        set("R3", r8(6) + ":" + r8(7) + "(" + r16(3) + ")");
         set("R4", r8(8) + ":" + r8(9) + "(" + r16(4) + ")");
         set("R5", r8(10) + ":" + r8(11) + "(" + r16(5) + ")");
         set("R6", r8(12) + ":" + r8(13) + "(" + r16(6) + ")");
         set("R7", r8(14) + ":" + r8(15) + "(" + r16(7) + ")");
-        let disassembly = ex.rv.with_relptr(0, function() { });
         document.getElementById("assembler").value = Assembler.disassemble(ex.rv.forward_slice(100));
     }
     load_asm(asm) {
@@ -31,7 +29,6 @@ class Main {
         this.refresh();        
     }
     static bind() {
-        let main = new Main();
         main.load_asm(Test.copier_program());
         document.getElementById("btn-assemble").onclick = function() {
             let asm = document.getElementById("assembler").value;
@@ -43,3 +40,5 @@ class Main {
         };
     }
 }
+
+var main = new Main(); // Give Javascript console access to everything

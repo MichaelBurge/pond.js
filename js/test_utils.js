@@ -27,9 +27,13 @@ class TestUtils {
         return Math.floor(this.seedable_random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive 
     }
     static assert_buffer_equal(expected, actual, message) {
+        let ex_bytes = new Uint8Array(expected); // Bring useful information into debugger scope
+        let ac_bytes = new Uint8Array(actual);
         this.assert_equal(expected.byteLength, actual.byteLength, "Byte lengths not equal(" + message + "):");
-        for (let i = 0; i < expected.size; i++) {
-            this.assert_equal(expected.byteLength, actual.byteLength, "Bytes at position" + i.toString() + " not equal(" + message + "):");
+        let ex_rv = new RingView(expected);
+        let ac_rv = new RingView(actual);
+        for (let i = 0; i < expected.byteLength; i++) {
+            this.assert_equal(ex_rv.getUint8(), ac_rv.getUint8(), "Bytes at position " + i.toString() + " not equal(" + message + "):");
         }
     }
     static assert_equal(expected, actual, message) {
