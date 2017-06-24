@@ -6,6 +6,8 @@ M_Z = SEED2;
 MASK = 0xffffffff;
 
 class TestUtils {
+    static assert(x) { if (! x) { debugger; }}
+    static assert_def(x) { if (x === undefined) { debugger; }}
     static arbitrary_buffer(size) {
         let test = this;
         let buffer = new ArrayBuffer(size);

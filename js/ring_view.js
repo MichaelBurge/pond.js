@@ -99,8 +99,10 @@ class RingView {
         return ((a << 24) | (b << 16) | (c << 8) | (d << 0)) >>> 0;
     }
     setUint32(value) {
-        this.dv.setUint32(this.os, value);
-        this.os = this.eval_relptr(4);
+        this.setUint8((value & 0xff000000) >>> 24);
+        this.setUint8((value & 0x00ff0000) >>> 16);
+        this.setUint8((value & 0x0000ff00) >>> 8);
+        this.setUint8((value & 0x000000ff) >>> 0);
     }
     eval_relptr(os) {
         if (this.is_ring) {

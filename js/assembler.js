@@ -151,8 +151,13 @@ class Assembler {
                 case 154: return expr_act(EXPRCLASS_RELPTR, -dv.getUint8());
                 case 153: return expr_act(EXPRCLASS_PATTPTR, dv.getUint32());
                 case 155: return expr_act(EXPRCLASS_NPATTPTR, dv.getUint32());
-                case 156: return expr_act(EXPRCLASS_ABSPTR, dv.getUint16());
-                default: return expr_act(EXPRCLASS_STACK, arg1 - 155);
+                case 156: 
+                default:
+                    if (arg1 < 172) {
+                        return expr_act(EXPRCLASS_ABSPTR, arg1 - 156);
+                    } else {
+                        return expr_act(EXPRCLASS_STACK, arg1 - 172);
+                    }
             }
         }
         throw "???";
@@ -180,52 +185,55 @@ class Assembler {
             return 1;
         }
         // reg
-        else if (arg = /^r(\d+)/.exec(token)) {
+        else if (arg = /^r(\d+)$/.exec(token)) {
             let [ text, reg_id ] = arg;
             dv.setUint8(128 + parseInt(reg_id));
             return 1;
         }
         // reg16
-        else if (arg = /^R(\d)/.exec(token)) {
+        else if (arg = /^R(\d)$/.exec(token)) {
             let [ text, reg_id ] = arg;
             dv.setUint8(144 + parseInt(reg_id));
             return 1;
         }
         // relptr
-        else if (arg = /^\[pc\+(\d+)\]/.exec(token)) {
+        else if (arg = /^\[pc\+(\d+)\]$/.exec(token)) {
             let [ text, os ] = arg;
             dv.setUint8(152);
             dv.setUint8(parseInt(os));
             return 2;
         }
         // nrelptr
-        else if (arg = /^\[pc-(\d+)\]/.exec(token)) {
+        else if (arg = /^\[pc-(\d+)\]$/.exec(token)) {
             let [ text, os ] = arg;
             dv.setUint8(154);
             dv.setUint8(parseInt(os));
             return 2;
         }
         // pattptr
-        else if (arg = /^0x[0-9a-f]+/.exec(token)) {
+        else if (arg = /^0x[0-9a-f]+$/.exec(token)) {
+            let [,patt] = arg;
             dv.setUint8(153);
-            dv.setUint32(Utils.read_hex(arg));
+            dv.setUint32(Utils.read_hex(patt));
             return 5;
         }
         // npattptr
-        else if (arg = /^-0x([0-9a-f]+)/.exec(token)) {
+        else if (arg = /^-0x([0-9a-f]+$)/.exec(token)) {
+            let [,patt] = arg;
             dv.setUint8(155);
-            dv.setUint32(Utils.read_hex(arg));
+            dv.setUint32(Utils.read_hex(patt));
             return 5;
         }
         // absptr
-        else if (arg = /^\[R([0-9])\]/.exec(token)) {
-            dv.setUint8(156 + arg);
+        else if (arg = /^\[R([0-9])\]$/.exec(token)) {
+            let [,reg16] = arg;
+            dv.setUint8(156 + parseInt(reg16));
             return 1;
         }
         // stack
-        else if (arg = /^\[sp-([0-9a-f]+)\]/.exec(token)) {
+        else if (arg = /^\[sp-([0-9a-f]+)\]$/.exec(token)) {
             let [ text, os ] = arg;
-            dv.setUint8(148 + parseInt(os));
+            dv.setUint8(172 + parseInt(os));
             return 1;
         }
         else {
@@ -233,20 +241,23 @@ class Assembler {
         }
     }
     static disassemble_expr(exprclass, arg) {
+        let reg16 = n => {
+            switch (arg) {
+                case 0: return "pc";
+                case 1: return "sp";
+                case 2: return "cp";
+                default: return "R" + arg.toString();
+
+            };
+        };
         switch (exprclass) {
             case EXPRCLASS_IMM: return arg.toString();
             case EXPRCLASS_REG: return "r" + arg.toString();
-            case EXPRCLASS_REG16:
-                switch (arg) {
-                    case 0: return "pc";
-                    case 1: return "sp";
-                    case 2: return "cp";
-                    default: return "R" + arg.toString();
-                }
+            case EXPRCLASS_REG16: return reg16(arg);
             case EXPRCLASS_RELPTR: return "[pc+" + arg.toString() + "]";
             case EXPRCLASS_PATTPTR: return "0x" + arg.toString(16);
             case EXPRCLASS_NPATTPTR: return "-0x" + arg.toString(16);
-            case EXPRCLASS_ABSPTR: return "[R" + arg.toString() + "]";
+            case EXPRCLASS_ABSPTR: return "[" + reg16(arg) + "]";
             case EXPRCLASS_STACK: return "[sp-" + arg.toString() + "]";
             default: throw "unknown exprclass: " + exprclass.toString();
         }

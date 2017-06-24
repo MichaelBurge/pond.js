@@ -41,7 +41,7 @@ class Test {
             [ "xor 91 91\n", [ 0x06, 91, 91 ], true],
             [ "lit 05 ff 06 ff\n", [ 0x05, 0xff, 0x06, 0xff ], false],
             [ "jump -0xffffffff\n", [ 0x01, 155, 0xff, 0xff, 0xff, 0xff ], true],
-            [ "mov [R5] [cp]\n", [ 0x03, 144+5, 144+2], true],
+            [ "mov [R5] [cp]\n", [ 0x03, 156+5, 156+2], true],
         ];
         
         previously_problematic_instructions.forEach(([ expected_asm, expected_bytecode, is_invertible ]) => {
@@ -82,8 +82,9 @@ class Test {
             lit ff ff ff ff
             mov R7 R5
             add R6 R5
-            mov [R5] [R2]
+            mov [R5] [cp]
             add 1 R6
+            add 1 cp
             jump -0xffffffff
             birth 0xc07fefe0
             kill
