@@ -180,16 +180,16 @@ class Program {
             this.rv.getInt16(x);
         }
     }
-    status() {
-        return this.reg8s[REG_STATUS];
-    }
     set_flag(flag, value) {
         if (value > 0) {
-            this.reg8s[REG_STATUS] |= flag;
+            this.reg8s[REG8_STATUS] |= flag;
         } else {
-            this.reg8s[REG_STATUS] &= ~flag;
+            this.reg8s[REG8_STATUS] &= ~flag;
         }
     }
     pc() { return this.reg16s[REG16_PC]; }
     cp(x) { return x ? this.reg16s[REG16_CP] = x : this.reg16s[REG16_CP]; }
+    sp() { return this.reg16s[REG16_SP]; }
+    status() { return this.reg8s[REG8_STATUS]; }
+    rng() { return this.reg8s[REG8_RANDOM]; }
 }

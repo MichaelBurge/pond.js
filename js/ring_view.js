@@ -127,4 +127,7 @@ class RingView {
         });
         return ret;
     }
+    forward_slice(size) {
+        return this.slice(this.os, size);
+    }
 }

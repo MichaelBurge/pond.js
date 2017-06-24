@@ -44,8 +44,8 @@ class Test {
         TestUtils.assert_buffer_equal(expected, actual, disassembled);
         // Ideally, we'd test disassemble(assemble(x :: Arbitrary BinaryAST)) == x, but code isn't structured for that.
     }
-    static test_copier_program() {
-        let copier = `
+    static copier_program() {
+        return `
             mov pc R14
             mov 0 R12
             jump 4
@@ -58,6 +58,9 @@ class Test {
             birth 0xc07fefe0
             kill
             lit c0 7f ef e0`;
+    }
+    static test_copier_program() {
+        let copier = this.copier_program();
         let expected = Assembler.assemble(copier);
         let executor = new ProgramExecutor(expected);
         executor.run(300);

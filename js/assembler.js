@@ -44,10 +44,11 @@ class Assembler {
         });
         return dv.truncate();
     }
-    static disassemble(buffer) {
+    static disassemble(buffer, max) {
         let output = "";
         let dv = new RingView(buffer);
-        while (! dv.is_done()) {
+        max = (max === undefined) ? 1000 : max;
+        while (! dv.is_done() && max --> 0) {
             let line = this.disassemble_instruction(dv);
             output += line;
             output += "\n";
