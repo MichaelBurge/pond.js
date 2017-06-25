@@ -100,6 +100,7 @@ class Test {
             mov [R5] [cp]
             add 1 R6
             add 1 cp
+            lt R6 49
             jump -0xffffffff
             birth 0xc07fefe0
             kill

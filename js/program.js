@@ -12,6 +12,7 @@ class Program {
         this.reg8s = new Uint8Array(16);
         this.reg16s = new Int16Array(this.reg8s.buffer);
         this.step_os = 0;
+        this.original_cp = 0;
     }
     step(rv) {
         this.step_os = this.rv.os;
@@ -125,8 +126,8 @@ class Program {
                     ];
                 case EXPRCLASS_ABSPTR:
                     return [
-                        pr.rv.with_absptr(arg, () => { return pr.read_size(1); }),
-                        pr.rv.with_absptr(arg, () => { return pr.read_size(2); }),
+                        pr.rv.with_absptr(pr.reg16s[arg], () => { return pr.read_size(1); }),
+                        pr.rv.with_absptr(pr.reg16s[arg], () => { return pr.read_size(2); }),
                     ];
                 case EXPRCLASS_STACK:
                     return [
@@ -162,15 +163,9 @@ class Program {
     search_patt(patt, direction) {
         let search = () => { return this.rv.search(256, Utils.split_uint32(patt), direction); };
         let mRelptr;
-        if (direction == -1) {
-            mRelptr = this.rv.with_absptr(this.step_os, search);
-        }
-        else {
-            mRelptr = search();
-        }
-        if (mRelptr === null) {
-            return 0;
-        }
+        if (direction == -1) { mRelptr = this.rv.with_absptr(this.step_os, search); }
+        else { mRelptr = search(); }
+        if (mRelptr === null) { return 0; }
         mRelptr += 4; // Skip past pattern
         return mRelptr;
     }
@@ -209,14 +204,16 @@ class Program {
         }
     }
     set_flag(flag, value) {
-        if (value > 0) {
-            this.reg8s[REG8_STATUS] |= flag;
-        } else {
-            this.reg8s[REG8_STATUS] &= ~flag;
-        }
+        if (value > 0) { this.reg8s[REG8_STATUS] |= flag; }
+        else { this.reg8s[REG8_STATUS] &= ~flag; }
     }
     pc() { return this.reg16s[REG16_PC]; }
-    cp(x) { return x ? this.reg16s[REG16_CP] = x : this.reg16s[REG16_CP]; }
+    cp(x) {
+        if (x === undefined) { return this.reg16s[REG16_CP]; }
+        else { this.reg16s[REG16_CP] = x;
+            this.original_cp = x;
+        }
+    }
     sp() { return this.reg16s[REG16_SP]; }
     status() { return this.reg8s[REG8_STATUS]; }
     rng() { return this.reg8s[REG8_RANDOM]; }
