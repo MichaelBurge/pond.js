@@ -11,8 +11,10 @@ class Program {
         this.rv = executor.rv;
         this.reg8s = new Uint8Array(16);
         this.reg16s = new Int16Array(this.reg8s.buffer);
+        this.step_os = 0;
     }
     step(rv) {
+        this.step_os = this.rv.os;
         Assembler.isa_mapM(rv, this.evaluate_expression.bind(this), this.evaluate_instruction.bind(this));
         this.reg16s[REG16_PC] = rv.os;
     }
@@ -43,7 +45,12 @@ class Program {
     jump([ arg ]) {
         let [ exprclass, [x8, x16], relptr ] = arg;
         if ((this.status() & FLAG_TEST) > 0) {
-            this.rv.os = this.rv.eval_relptr(relptr);
+            // Forward jumps count from end of instruction; backward counts from start of instruction.
+            if (relptr >= 0) {
+                this.rv.os = this.rv.eval_relptr(relptr);
+            } else {
+                this.rv.os = this.rv.with_absptr(this.step_os, () => { return this.rv.eval_relptr(relptr); });
+            }
         }
     }
 
@@ -109,7 +116,6 @@ class Program {
                 ];
                 case EXPRCLASS_PATTPTR:
                 case EXPRCLASS_NPATTPTR:
-                    debugger;
                     let direction = (exprclass == EXPRCLASS_PATTPTR) ? 1 : -1;
                     let relptr = pr.search_patt(arg, direction);
                     arg = relptr;
@@ -154,9 +160,16 @@ class Program {
         }
     }
     search_patt(patt, direction) {
-        let mRelptr = this.rv.search(256, Utils.split_uint32(patt), direction);
+        let search = () => { return this.rv.search(256, Utils.split_uint32(patt), direction); };
+        let mRelptr;
+        if (direction == -1) {
+            mRelptr = this.rv.with_absptr(this.step_os, search);
+        }
+        else {
+            mRelptr = search();
+        }
         if (mRelptr === null) {
-            return direction;
+            return 0;
         }
         mRelptr += 4; // Skip past pattern
         return mRelptr;

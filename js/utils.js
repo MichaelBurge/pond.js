@@ -33,4 +33,8 @@ class Utils {
             (x & 0x000000ff) >>> 0
         ];
     }
+    static pad2(x) {
+        if (x.length < 2) { return "0"+x; }
+        else { return x; }
+    }
 }

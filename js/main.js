@@ -22,6 +22,19 @@ class Main {
         set("R6", r8(12) + ":" + r8(13) + "(" + r16(6) + ")");
         set("R7", r8(14) + ":" + r8(15) + "(" + r16(7) + ")");
         document.getElementById("assembler").value = Assembler.disassemble(ex.rv.forward_slice(100));
+        document.getElementById("memory").value = this.memory_view(ex.rv.buffer);
+    }
+    memory_view(buffer) {
+        let dv = new DataView(buffer);
+        let output = "";
+        for (let os = 0; os < buffer.byteLength; os++) {
+            if (os % 16 == 0) { output += Utils.pad2(os.toString(16)) +": " }
+            let byte = dv.getUint8(os);
+            output += Utils.pad2(byte.toString(16));
+            if (os % 16 == 15) { output += "\n"; }
+            else { output += " "; }
+        }
+        return output;
     }
     load_asm(asm) {
         let bytecode = Assembler.assemble(asm);

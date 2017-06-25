@@ -114,11 +114,12 @@ class RingView {
     seek(x) { this.os = x; }
     search(max, patt, direction) {
         let rv = this;
-        for (var os = 0; os < max; os++) {
+        for (let os = 0; os < max; os++) {
             let success = this.with_relptr(os * direction, () => {
                 let success = true;
                 patt.forEach(x => {
-                    if (rv.getUint8() != x) {
+                    let y = rv.getUint8();
+                    if (y != x) {
                         success = false;
                     }
                 });
@@ -127,7 +128,6 @@ class RingView {
             if (success) {
                 return os * direction;
             }
-            this.os = this.eval_relptr(direction);
         }
         return null;
     }

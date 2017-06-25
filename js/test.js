@@ -35,6 +35,21 @@ class Test {
             TestUtils.assert_equal(0xff, a, "");
             TestUtils.assert_equal(0xaa, b, "");
         }
+        // Check #3: Search
+        {
+            let buf = new Uint8Array([ -1,-1,-1,5,6,7,8,-1,-1,-1 ]).buffer;
+            let rv = new RingView(buf);
+            { // Forward
+                let relptr = rv.search(10, [5,6,7,8], 1);
+                TestUtils.assert_equal(3, relptr, "");
+            }
+            { // Backward
+                rv.seek(7);
+                let relptr = rv.search(10, [5,6,7,8], -1);
+                TestUtils.assert_equal(-4, relptr, "");
+            }
+            
+        }
     }
     static test_instructions() {
         let previously_problematic_instructions = [
