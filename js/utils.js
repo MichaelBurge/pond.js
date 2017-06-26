@@ -37,4 +37,19 @@ class Utils {
         if (x.length < 2) { return "0"+x; }
         else { return x; }
     }
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+    static random(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+    }
+
+    static djb(buffer) {
+        let hash = 5381;
+        let arr = new Uint8Array(buffer);
+        arr.forEach(x => {
+            hash = ((hash << 5) + hash) + x;
+        });
+        return hash;
+    }
 }

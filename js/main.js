@@ -7,7 +7,7 @@ class Main {
             document.getElementById(id).innerHTML = x;
         };
         let ex = this.executor;
-        let program = ex.program;
+        let program = ex.program();
         let pc = program.pc();
         let inst = ex.rv.with_relptr(0, () => Assembler.disassemble_instruction(ex.rv));
         let r8 = n => { return program.reg8s[n].toString(); };
@@ -24,6 +24,16 @@ class Main {
         document.getElementById("assembler").value = Assembler.disassemble(ex.rv.forward_slice(100));
         document.getElementById("memory").value = this.memory_view(ex.rv.buffer);
         document.getElementById("child-memory").value = this.memory_view(ex.rv.buffer, program.original_cp, 256);
+        let programs = document.getElementById("programs");
+        programs.innerHTML = '';
+        
+        ex.programs().forEach(program => {
+            let tr = document.createElement("tr");
+            let td = document.createElement("td");
+            td.innerText = ex.id(program);
+            tr.appendChild(td);
+            programs.appendChild(tr);
+        });
     }
     memory_view(buffer, start, size) {
         let dv = new DataView(buffer);
@@ -45,7 +55,8 @@ class Main {
     }
     load_asm(asm) {
         let bytecode = Assembler.assemble(asm);
-        this.executor = new ProgramExecutor(bytecode);
+        //this.executor = new ProgramExecutor(bytecode);
+        this.executor = new PoolExecutor(bytecode);
         this.refresh();        
     }
     static bind() {

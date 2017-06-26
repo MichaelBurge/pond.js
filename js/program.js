@@ -6,15 +6,17 @@ REG16_CP = 2;
 FLAG_TEST = 0x01;
 
 class Program {
-    constructor(executor) {
+    constructor(executor, id) {
         this.executor = executor;
         this.rv = executor.rv;
         this.reg8s = new Uint8Array(16);
         this.reg16s = new Int16Array(this.reg8s.buffer);
         this.step_os = 0;
         this.original_cp = 0;
+        this.id = id;
     }
     step(rv) {
+        this.rv.seek(this.pc());
         this.step_os = this.rv.os;
         Assembler.isa_mapM(rv, this.evaluate_expression.bind(this), this.evaluate_instruction.bind(this));
         this.reg16s[REG16_PC] = rv.os;
@@ -39,9 +41,7 @@ class Program {
         }
     }   
 
-    kill() {
-        this.executor.kill(this);
-    }
+    kill() { this.executor.kill(this); }
 
     jump([ arg ]) {
         let [ exprclass, [x8, x16], relptr ] = arg;
