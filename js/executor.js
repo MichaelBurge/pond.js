@@ -51,6 +51,7 @@ class PoolExecutor extends Executor {
     should_reap() { return this._programs.length > this.max_programs; }
     spawn(pc, id) { let pr = new Program(this, id, this.guid++); pr.pc(pc); this._programs.push(pr); }
     birth(bytecode) { this.spawn(this.program().original_cp, this.id(bytecode)); }
+    get_default_cp() { return Utils.random(0, this.memory.byteLength); }
 }
 
 // Designed for executing single programs
@@ -63,7 +64,6 @@ class ProgramExecutor extends Executor {
         bytecode_rv.copy(this.rv, bytecode.byteLength);
         this.rv.seek(0);
         this._program = new Program(this, this.id(bytecode), 0);
-        this._program.cp(9000);
         this.child = null;
     }
     get_child() { return this.child; }
@@ -72,4 +72,5 @@ class ProgramExecutor extends Executor {
     birth(bytecode) { this.child = bytecode; }
     program() { return this._program; }
     programs() { return [ this._program ];}
+    get_default_cp() { return 9000; }
 }

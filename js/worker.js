@@ -61,15 +61,14 @@ class ExecutorRunner {
         };
     }
     memory_view(buffer, start, size) {
-        let dv = new DataView(buffer);
+        let dv = new RingView(buffer, true);
         let output = "";
         start = (start === undefined) ? 0 : start;
         size = (size === undefined) ? buffer.byteLength : size;
         let padding = start % 16;
         start -= padding;
         size += padding;
-        let end = start + size;
-        for (let os = start; os < end; os++) {
+        for (let os = start; size --> 0; os++) {
             if (os % 16 == 0) { output += Utils.pad2(os.toString(16)) +": " }
             let byte = dv.getUint8(os);
             output += Utils.pad2(byte.toString(16));

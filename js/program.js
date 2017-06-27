@@ -12,7 +12,7 @@ class Program {
         this.reg8s = new Uint8Array(16);
         this.reg16s = new Int16Array(this.reg8s.buffer);
         this.step_os = 0;
-        this.original_cp = 0;
+        this.original_cp = executor.get_default_cp();
         this.id = id;
         this.guid = guid;
     }
