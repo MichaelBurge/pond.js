@@ -91,6 +91,8 @@ class Test {
     static copier_program() {
         return `
             mov pc R7
+            jump 4
+            lit ae ae ae ae
             mov 0 R6
             eq 0 0
             jump 4
@@ -100,10 +102,11 @@ class Test {
             mov [R5] [cp]
             add 1 R6
             add 1 cp
-            lt R6 49
+            lt R6 63
             jump -0xffffffff
             birth 0xc07fefe0
-            kill
+            eq 0 0
+            jump -0xaeaeaeae
             lit c0 7f ef e0`;
     }
     static test_copier_program() {

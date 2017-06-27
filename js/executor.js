@@ -13,6 +13,7 @@ class Executor {
     step() { }
     kill() {}
     birth(bytecode) {}
+    guid(program ) {}
 }
 
 // Designed for executing a pool of related programs.
@@ -25,30 +26,31 @@ class PoolExecutor extends Executor {
         this._programs = [ ];
         this.timeslice_cycle = 0;
         this.pid = 0;
-        
+        this.guid = 0;
         // Settings
-        this.max_programs = 2;
-        this.timeslice_size = 100;
+        this.max_programs = 10;
+        this.timeslice_size = 10;
 
         this.seed();
     }
     step() {
         let pr = this.program();
         pr.step(this.rv);
-        if (this.timeslice_cycle >= this.timeslice_size) { this.next_program(); }
+        if (this.timeslice_cycle++ >= this.timeslice_size) { this.next_program(); }
         if (this.should_reap()) { this.reap(); }
         if (this._programs.length == 0) { this.seed(); }
     }
 
-    seed() { this.birth(this.seed_bytecode); this.pid = 0;}
+    seed() { let bytecode = this.pool[0]; this.spawn(this.rv.os, this.id(bytecode)); this.inject(bytecode); }
     inject(bytecode) { new RingView(bytecode).copy(this.rv, bytecode.byteLength); }
     program() { return this._programs[this.pid]; }
     next_program() { this.pid = (this.pid + 1) % this._programs.length; this.timeslice_cycle = 0; }
     programs() { return this._programs; }
     reap() { this._programs.shift(); this.pid %= this._programs.length; }
     kill() { this.reap(); }
-    birth(bytecode) { let pr = new Program(this, this.id(bytecode)); this._programs.push(pr);}
     should_reap() { return this._programs.length > this.max_programs; }
+    spawn(pc, id) { let pr = new Program(this, id, this.guid++); pr.pc(pc); this._programs.push(pr); }
+    birth(bytecode) { this.spawn(this.program().original_cp, this.id(bytecode)); }
 }
 
 // Designed for executing single programs
@@ -60,7 +62,7 @@ class ProgramExecutor extends Executor {
         let bytecode_rv = new RingView(bytecode);
         bytecode_rv.copy(this.rv, bytecode.byteLength);
         this.rv.seek(0);
-        this._program = new Program(this, this.id(bytecode));
+        this._program = new Program(this, this.id(bytecode), 0);
         this._program.cp(9000);
         this.child = null;
     }

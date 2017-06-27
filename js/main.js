@@ -12,6 +12,7 @@ class Main {
         let inst = ex.rv.with_relptr(0, () => Assembler.disassemble_instruction(ex.rv));
         let r8 = n => { return program.reg8s[n].toString(); };
         let r16 = n => { return program.reg16s[n].toString(); };
+        set("guid", program.guid.toString(10));
         set("pc", pc.toString(16) + "(" + inst + ")");
         set("sp", program.sp().toString(16));
         set("cp", program.cp().toString(16));
@@ -25,13 +26,14 @@ class Main {
         document.getElementById("memory").value = this.memory_view(ex.rv.buffer);
         document.getElementById("child-memory").value = this.memory_view(ex.rv.buffer, program.original_cp, 256);
         let programs = document.getElementById("programs");
-        programs.innerHTML = '';
+        programs.innerHTML = '<tr><td>Program #</td><td>Program Hash</td></tr>';
         
         ex.programs().forEach(program => {
             let tr = document.createElement("tr");
-            let td = document.createElement("td");
-            td.innerText = ex.id(program);
-            tr.appendChild(td);
+            let td1 = document.createElement("td"); td1.innerText = program.guid.toString();
+            let td2 = document.createElement("td"); td2.innerText = ex.id(program);
+            tr.appendChild(td1);
+            tr.appendChild(td2);
             programs.appendChild(tr);
         });
     }

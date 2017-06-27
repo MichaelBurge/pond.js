@@ -6,7 +6,7 @@ REG16_CP = 2;
 FLAG_TEST = 0x01;
 
 class Program {
-    constructor(executor, id) {
+    constructor(executor, id, guid) {
         this.executor = executor;
         this.rv = executor.rv;
         this.reg8s = new Uint8Array(16);
@@ -14,6 +14,7 @@ class Program {
         this.step_os = 0;
         this.original_cp = 0;
         this.id = id;
+        this.guid = guid;
     }
     step(rv) {
         this.rv.seek(this.pc());
@@ -57,11 +58,11 @@ class Program {
 
     birth(patt) {
         let program = this;
-        let size = this.rv.with_absptr(this.reg16s[REG16_CP], () => {
+        let size = this.rv.with_absptr(this.original_cp, () => {
             return this.rv.search(256, Utils.split_uint32(patt), 1) || 256;
         });
-        let child = this.rv.slice(this.reg16s[REG16_CP], size);
-        this.executor.birth(child);
+        let child = this.rv.slice(this.original_cp, size);
+        this.executor.birth(this);
     }
     
     add([src, dest]) { return this.binop_assign(src, dest, (a, b) => { return a + b; }); }
