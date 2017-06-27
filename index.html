@@ -25,12 +25,13 @@
       </div>
       </div>
       <div class="pane">
-        <h3>Assembler <button id="btn-assemble">Assemble</button></h3>
+        <!-- <h3>Assembler <button id="btn-assemble">Assemble</button></h3> -->
+        <h3>Assembler</h3>
         <textarea id="assembler" rows="10">
         </textarea>
       </div>
       <div class="pane">
-        <h3>Debugger <button id="btn-run">Run</button><button id="btn-step">Step</button></h3>
+        <h3>Debugger <button id="btn-run">Run</button><button id="btn-pause">Pause</button><button id="btn-run300">Run(300 steps)</button><button id="btn-step">Step</button></h3>
         <div id="debugger">
           <table class="registers">
             <tr>
@@ -68,9 +69,9 @@
     <script src="js/test.js"></script>
     <script src="js/main.js"></script>
     
-    <!-- Uncomment to run unit tests -->
     <script>
-      Test.all();
+      // Uncomment to run unit tests
+      Test.all(); 
       Main.bind();
     </script>
   </body>
