@@ -11,8 +11,9 @@ class Main {
             document.getElementById(id).innerHTML = x;
         };
         let rg = view.registers;
+        set("inst", view.inst);
         set("guid", view.guid.toString(10));
-        set("pc", rg.pc.toString(16) + "(" + view.inst + ")");
+        set("pc", rg.pc.toString(16));
         set("sp", rg.sp.toString(16));
         set("cp", rg.cp.toString(16));
         set("st", rg.st.toString(2));

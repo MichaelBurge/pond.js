@@ -5,6 +5,7 @@
     flex-wrap: wrap;
     justify-content: space-between;
     }
+    table { table-layout: fixed; width: 100%;}
     table, tr, td {
     border: 1px solid black;
     }
@@ -33,6 +34,7 @@
       <div class="pane">
         <h3>Debugger <button id="btn-run">Run</button><button id="btn-pause">Pause</button><button id="btn-run300">Run(300 steps)</button><button id="btn-step">Step</button></h3>
         <div id="debugger">
+          <div>Next: <span id="inst"></span></diV>
           <table class="registers">
             <tr>
               <td>GUID</td><td id="guid"></td>
