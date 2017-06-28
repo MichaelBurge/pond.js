@@ -25,7 +25,14 @@ These are the available panes to interact with the pond:
 * Child Memory: Shows a hexadecimal display of the current program's [cp_root, cp_root+256) region, which a subsequent 'birth' instruction will create a process from.
 ## Executor
 
-The Executor maintains a 64kb memory space, a list of active programs, and a gene bank.
+The Executor maintains a 64kb memory space, a list of active programs, and a gene bank. It:
+
+* Timeslices between the active programs
+* Reaps old programs
+* Seeds new programs
+* Causes occasional "catastrophe" events that randomize all bytes, which usually kills off all active programs.
+
+The memory space is in a 'ring buffer' that wraps around on overflow. The data structure that does this doesn't depend on 16-bit integer overflow, and will work for any sized buffer.
 
 ## Program
 
@@ -94,3 +101,7 @@ To parse an expression, read a uint8 and match it below:
 * npattptr:155 + byte[4]
 * absptr:[156:172)
 * stack:[172:256)
+
+## Worker
+
+PoolJS uses the new "Workers" feature to run processing in the background. UI elements send commands to a worker, which executes them and sends the complete current state back.
