@@ -38,7 +38,7 @@
 
       <!-- </div> -->
       <div class="pane">
-        <h3>Debugger <button id="btn-run">Run</button><button id="btn-pause">Pause</button><button id="btn-run300">Run(300 steps)</button><button id="btn-step">Step</button></h3>
+        <h3>Debugger <button id="btn-run">Run</button><button id="btn-pause">Pause</button><button id="btn-run300">Run(300 steps)</button><button id="btn-step">Step</button><button id="btn-breakbirth">Break on Birth</button></h3>
         <div id="debugger">
           <div>Next: <span id="inst"></span></diV>
           <table class="registers">
@@ -59,6 +59,8 @@
             <tr>
               <td># Clocks</td><td id="total_clocks"></td>
               <td>Clocks/ms</td><td id="clocks_per_ms"></td>
+              <td>PC Root</td><td id="pc_root"></td>
+              <td>CP Root</td><td id="cp_root"></td>
             </tr>
           </table>
           <h3>Disassembly</h3>

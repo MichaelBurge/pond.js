@@ -102,21 +102,20 @@ class Test {
     }
     static copier_program() {
         return `
-            mov pc R7
             jump 4
             lit ae ae ae ae
+            alloc
             mov 0 R6
+            mov 0 cp
             eq 0 0
             jump 4
             lit ff ff ff ff
-            mov R7 R5
-            add R6 R5
-            mov [R5] [cp]
+            mov [R6] [cp]
             add 1 R6
             add 1 cp
-            lt R6 63
+            lt R6 55
             jump -0xffffffff
-            birth 0xc07fefe0
+            birth R6
             eq 0 0
             jump -0xaeaeaeae
             lit c0 7f ef e0`;

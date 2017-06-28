@@ -25,12 +25,15 @@ class Main {
         set("R7", rg.R7);
         set("total_clocks", view.total_clocks);
         set("clocks_per_ms", view.clocks_per_ms);
+        set("pc_root", rg.original_pc.toString(16));
+        set("cp_root", rg.original_cp.toString(16));
         document.getElementById("assembler").value = view.disassembly;
         document.getElementById("memory").value = this.memory_view(view.memory);
         document.getElementById("child-memory").value = this.memory_view(view.child_memory);
         let programs = document.getElementById("programs");
-        programs.innerHTML = '<tr><td>Program #</td><td>Program Hash</td><td>pc</td><td># cycles</td><td>Lineage Depth</td></tr>';
-        
+        programs.innerHTML = '<tr><td>Program #</td><td>Program Hash</td><td>pc</td><td># cycles</td><td>Lineage Depth</td><td></td></tr>';
+
+        let pid = 0;
         view.programs.forEach(prv => {
             let tr = document.createElement("tr");
             let td1 = document.createElement("td"); td1.innerText = prv.guid.toString();
@@ -38,11 +41,26 @@ class Main {
             let td3 = document.createElement("td"); td3.innerText = prv.pc.toString(16);
             let td4 = document.createElement("td"); td4.innerText = prv.cycles.toString();
             let td5 = document.createElement("td"); td5.innerText = prv.lineage.toString();
+            let td6 = document.createElement("td");
+            let btn_debug = document.createElement("button"); btn_debug.innerText = "Debug";
+            let btn_kill = document.createElement("button"); btn_kill.innerText = "Kill";
+            let mypid = pid++;
+            btn_debug.onclick = () => {
+                main.pause();
+                main.set_pid(mypid);
+            };
+            btn_kill.onclick = () => {
+                main.pause();
+                main.kill(mypid);
+            };
+            td6.appendChild(btn_debug);
+            td6.appendChild(btn_kill);
             tr.appendChild(td1);
             tr.appendChild(td2);
             tr.appendChild(td3);
             tr.appendChild(td4);
             tr.appendChild(td5);
+            tr.appendChild(td6);
             programs.appendChild(tr);
         });
         let genebank = document.getElementById("gene-bank");
@@ -92,7 +110,6 @@ class Main {
         if (this.running) {
             this.worker.postMessage([ "runTime", WORKER_TIMESLICE ]);
         }
-        
     }
 
     on_message(e) {
@@ -101,7 +118,9 @@ class Main {
         this.refresh(e.data);
         window.requestAnimationFrame(() => { this.on_interval(); });
     }
-
+    
+    set_pid(pid) { this.worker.postMessage([ "set_pid", pid ]); }
+    kill(pid) { this.worker.postMessage([ "kill", pid ]); }
     pause() { this.running = false; }
     
     static bind() {
@@ -116,6 +135,7 @@ class Main {
             main.running = false;
         };
         document.getElementById("btn-step").onclick = function() {
+            main.running = false;
             main.worker.postMessage([ "step" ]);
         };
         document.getElementById("btn-run").onclick = function() {
@@ -123,7 +143,13 @@ class Main {
             window.requestAnimationFrame(() => { main.on_interval(); });
         };
         document.getElementById("btn-run300").onclick = function() {
+            main.running = false;
             main.worker.postMessage([ "run300" ]);
+        };
+        document.getElementById("btn-breakbirth").onclick = function() {
+            main.running = false;
+            main.worker.postMessage([ "run_birth" ]);
+            main.worker.postMessage([ "set_pid", -1 ]);
         };
     }
 }

@@ -13,20 +13,21 @@ class Program {
         this.reg8s = new Uint8Array(16);
         this.reg16s = new Int16Array(this.reg8s.buffer);
         this.step_os = 0;
-        this.original_cp = executor.get_default_cp();
-        this.cp(this.original_cp);
         this.id = id;
         this.guid = guid;
         this.num_clocks = 0;
         this.lineage = 0;
+        this.original_pc = 0;
+        this.original_cp = null;
         // Settings
         this.max_child_size = 256;
+        this.max_nops = 10;
     }
     step(rv) {
         this.rv.seek(this.pc());
         this.step_os = this.rv.os;
         Assembler.isa_mapM(rv, this.evaluate_expression.bind(this), this.evaluate_instruction.bind(this));
-        this.reg16s[REG16_PC] = rv.os;
+        this.reg16s[REG16_PC] += this.rv.os - this.step_os;
         this.num_clocks++;
     }
     
@@ -45,11 +46,19 @@ class Program {
             case 0x0a: return this.gt(args);
             case 0x0b: return this.eq(args);
             case 0x0c: return this.lt(args);
-            default: return null;
+            case 0x0d: return this.push(args);
+            case 0x0e: return this.pop(args);
+            case 0x0f: return this.alloc(args);
+            default:
+                if (this.max_nops-- > 0) {
+                    return null;
+                } else {
+                    return this.kill();
+                }
         }
-    }   
+    }    
 
-    kill() { this.executor.kill(this); }
+    kill() { this.executor.kill(); }
 
     jump([ arg ]) {
         let [ exprclass, [x8, x16], relptr ] = arg;
@@ -63,13 +72,14 @@ class Program {
         }
     }
 
-    birth(patt) {
-        let cp = this.cp();
-        let size = this.rv.ptr_diff(this.original_cp, cp);
-        if (size === null || size == 0 || size > this.max_child_size) {
+    birth([ arg ]) {
+        if (this.original_cp == null) { return; }
+        let cp = this.original_cp;
+        let size = this.resolve_expr(arg);
+        if (size === null || size <= 0 || size > this.max_child_size) {
             return;
         } else {
-            let child = this.rv.slice(this.original_cp, size);
+            let child = this.rv.slice(cp, size);
             this.executor.birth(this, child);
         }
     }
@@ -93,6 +103,16 @@ class Program {
         let val = this.binop(x,y,(a,b) => { return a < b; });
         this.set_flag(FLAG_TEST, val);
     }
+    push([ arg ]) {
+        let [ exprclass, [ x8, x16], relptr ] = arg;
+        this.sp(this.sp() - this.exprclass_size(exprclass));
+        this.assign(exprclass, this.resolve_expr(arg), EXPRCLASS_STACK, 0);
+    }
+    pop([ arg ]) {
+        let [ exprclass, [ x8, x16], relptr ] = arg;
+        this.assign(EXPRCLASS_STACK, 0, exprclass, relptr);
+    }
+    alloc() { this.original_cp = this.executor.get_default_cp(); }
     binop([ src_exprclass, [ src8, src16], src_ref], [ dest_exprclass, [ dest8, dest16 ], dest_ref], combine) {
         let val;
         if (this.exprclass_size(src_exprclass) == 2 || this.exprclass_size(dest_exprclass) == 2) {
@@ -136,8 +156,8 @@ class Program {
                     ];
                 case EXPRCLASS_ABSPTR:
                     return [
-                        pr.rv.with_absptr(pr.reg16s[arg], () => { return pr.read_size(1); }),
-                        pr.rv.with_absptr(pr.reg16s[arg], () => { return pr.read_size(2); }),
+                        pr.with_reg16ptr(arg, () => { return pr.read_size(1); }),
+                        pr.with_reg16ptr(arg, () => { return pr.read_size(2); }),
                     ];
                 case EXPRCLASS_STACK:
                     return [
@@ -166,7 +186,7 @@ class Program {
                 let direction = (dest_exprclass == EXPRCLASS_PATTPTR) ? 1 : -1;
                 let relptr = this.search_patt(256, dest, direction);
                 return this.rv.with_relptr(relptr, () => { program.set_size(val_size, val); });
-            case EXPRCLASS_ABSPTR: return this.rv.with_absptr(this.reg16s[dest], () => { program.set_size(val_size, val); });
+            case EXPRCLASS_ABSPTR: return this.with_reg16ptr(dest, () => { program.set_size(val_size, val); });
             case EXPRCLASS_STACK: return this.with_sp(dest, () => { program.set_size(val_size, val); });
             default:
                 throw "???";
@@ -193,15 +213,6 @@ class Program {
             case EXPRCLASS_STACK: return 1;
         }
     }
-    with_sp(os, block) {
-        let program = this;
-        let sp = this.reg16s[REG16_SP]; TestUtils.assert_def(sp);
-        return this.rv.with_absptr(sp, () => {
-            return program.rv.with_relptr(os, () => {
-                return block();
-            });
-        });
-    }
     set_size(size, x) {
         if (size == 1) {
             this.rv.setUint8(x);
@@ -221,16 +232,32 @@ class Program {
         else { this.reg8s[REG8_STATUS] &= ~flag; }
     }
     pc(x) {
-        if (x == undefined) { return this.reg16s[REG16_PC]; }
-        else { return this.reg16s[REG16_PC] = x; }
+        if (x === undefined) { return this.eval_reg16ptr(REG16_PC); }
+        else {
+            this.original_pc = x;
+            return this.reg16s[REG16_PC] = 0;
+        }
     }
     cp(x) {
         if (x === undefined) { return this.reg16s[REG16_CP]; }
-        else { this.reg16s[REG16_CP] = x;
+        else { this.reg16s[REG16_CP] = 0;
             this.original_cp = x;
         }
     }
     sp() { return this.reg16s[REG16_SP]; }
     status() { return this.reg8s[REG8_STATUS]; }
-    rng() { return this.reg8s[REG8_RANDOM]; }
+    rng(x) {
+        if (x === undefined) { return this.reg8s[REG8_RANDOM]; }
+        else { this.reg8s[REG8_RANDOM] = x; }
+    }
+    with_reg16ptr(r16, action) {
+        return this.rv.with_absptr(this.eval_reg16ptr(r16), () => {
+            return action();
+        });
+    }
+    with_sp(os, action) { return this.with_reg16ptr(this.reg16s[REG16_SP] + os, () => { return action(); }); }
+    eval_reg16ptr(r16) {
+        if (r16 == REG16_CP) { return this.original_cp + this.reg16s[REG16_CP]; }
+        else {  return this.original_pc + this.reg16s[r16]; }
+    }
 }

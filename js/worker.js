@@ -19,8 +19,10 @@ class ExecutorRunner {
         let ex = this.executor;
         this.clocks_per_ms = 0;
         switch (msg) {
+            case "kill": ex.kill(arg); break;
             case "step": ex.step(); break;
-            case "run300": ex.run(300); break;
+            case "run300": ex.running = true; ex.run(300); break;
+            case "run_birth": ex.break_birth = true; arg = WORKER_TIMESLICE;
             case "runTime":
                 {
                     let startTime = Date.now();
@@ -32,6 +34,7 @@ class ExecutorRunner {
                     this.clocks_per_ms = num_clocks / arg;
                 }
                 break;
+            case "set_pid": ex.set_pid(arg); break;
             default: throw "unknown event" + msg;
         }
         postMessage(this.serialize());
@@ -56,7 +59,9 @@ class ExecutorRunner {
                 R4: r16(4),
                 R5: r16(5),
                 R6: r16(6),
-                R7: r16(7)
+                R7: r16(7),
+                original_pc: program.original_pc,
+                original_cp: program.original_cp || "null"
             },
             disassembly: Assembler.disassemble(ex.rv.forward_slice(100)),
             memory: ex.rv.buffer,

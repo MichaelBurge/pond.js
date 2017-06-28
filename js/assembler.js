@@ -5,7 +5,7 @@ ITABLE = [
     [ 0x02, 2, "add" ],
     [ 0x03, 2, "mov" ],
     [ 0x04, 2, "sub" ],
-    [ 0x05, 0, "birth" ],
+    [ 0x05, 1, "birth" ],
     [ 0x06, 2, "xor" ],
     [ 0x07, 2, "and" ],
     [ 0x08, 2, "or" ],
@@ -13,7 +13,9 @@ ITABLE = [
     [ 0x0a, 2, "gt" ],
     [ 0x0b, 2, "eq" ],
     [ 0x0c, 2, "lt" ],
-    // [ 0x0d, 1, "nz" ],
+    [ 0x0d, 1, "push" ],
+    [ 0x0e, 1, "pop" ],
+    [ 0x0f, 0, "alloc" ],
     // [ 0x0e, 1, "z" ],
 ];
 
@@ -80,15 +82,6 @@ class Assembler {
                     });
                 }
                 break;
-            case "birth":
-                {
-                    let arg_token = tokens.shift();
-                    let arg = parseInt(arg_token, 16);
-                    let [opcode, arity, ] = this.get_token_metadata(token);
-                    dv.setUint8(opcode);
-                    dv.setUint32(arg);
-                }
-                break;
             default:
                 let [opcode, arity, ] = this.get_token_metadata(token);
                 arityk(opcode, arity);
@@ -129,12 +122,7 @@ class Assembler {
         };
         
         let [opcode2, arity, token] = this.get_opcode_metadata(opcode);
-        if (token == "birth") {
-            let arg = dv.getUint32();
-            return op_act(opcode, arg);
-        } else {
-            return arityk(arity);
-        }
+        return arityk(arity);
     }
 
     static expr_mapM(dv, expr_act) {
@@ -168,9 +156,6 @@ class Assembler {
         let asm = this;
         return this.isa_mapM(dv, function(exprclass, arg) { return asm.disassemble_expr(exprclass, arg); }, function(opcode, args) {
             let [ opcode2, arity, token ] = asm.get_opcode_metadata(opcode);
-            if (token == "birth") {
-                args = args.toString(16);
-            }
             return [ token ].concat(args).join(' ');
         });
         
@@ -180,6 +165,7 @@ class Assembler {
         token = token.replace("pc", "R0");
         token = token.replace("sp", "R1");
         token = token.replace("cp", "R2");
+        token = token.replace("rng", "r7");
         // imm
         if (/^\d\d?\d?$/.exec(token)) {
             dv.setUint8(parseInt(token));
@@ -198,14 +184,14 @@ class Assembler {
             return 1;
         }
         // relptr
-        else if (arg = /^\[pc\+(\d+)\]$/.exec(token)) {
+        else if (arg = /^\[R0\+(\d+)\]$/.exec(token)) {
             let [ text, os ] = arg;
             dv.setUint8(152);
             dv.setUint8(parseInt(os));
             return 2;
         }
         // nrelptr
-        else if (arg = /^\[pc-(\d+)\]$/.exec(token)) {
+        else if (arg = /^\[R0-(\d+)\]$/.exec(token)) {
             let [ text, os ] = arg;
             dv.setUint8(154);
             dv.setUint8(parseInt(os));
@@ -232,7 +218,7 @@ class Assembler {
             return 1;
         }
         // stack
-        else if (arg = /^\[sp-([0-9a-f]+)\]$/.exec(token)) {
+        else if (arg = /^\[R1-([0-9a-f]+)\]$/.exec(token)) {
             let [ text, os ] = arg;
             dv.setUint8(172 + parseInt(os));
             return 1;
