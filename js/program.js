@@ -17,6 +17,7 @@ class Program {
         this.guid = guid;
         this.num_clocks = 0;
         this.lineage = 0;
+        this.same_lineage = 0;
         this.original_pc = 0;
         this.original_cp = null;
         // Settings

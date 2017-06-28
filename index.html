@@ -10,16 +10,18 @@
     table, tr, td {
     border: 1px solid black;
     }
-    .pane { width: 49%; border: 1px solid black; height: 50%; overflow: scroll; }
+    .pane { margin: 1em 0; width: 49%; border: 1px solid black; height: 50vh; overflow: scroll; }
     h3 { text-align: center; display: flex; justify-content: space-around; }
     textarea { display: block; width: 100%; min-height: 10em; }
     #assembler { height: 50%; }
+    .divider { border-bottom-style: green; margin: 10px 0;}
   </style>
   <body id="pond-root">
-    <!-- <h3>If you're on Chrome, enable ES6</h3> -->
+    <!-- <h3>Note: This site uses newer Javascript features.</h3> -->
     <!-- <table> -->
     <!--   <tr><td>Chrome</td><td>chrome://flags/#enable-javascript-harmony</td></tr> -->
     <!-- </table> -->
+    <div class="divider"></div>
     <main>
       <div class="pane">
         <h3>Gene Bank</h3>
@@ -61,6 +63,11 @@
               <td>Clocks/ms</td><td id="clocks_per_ms"></td>
               <td>PC Root</td><td id="pc_root"></td>
               <td>CP Root</td><td id="cp_root"></td>
+              <td></td><td></td>
+            </tr>
+            <tr>
+              <td>Lineage</td><td id="lineage"></td>
+              <td>Same Lineage</td><td id="same_lineage"></td>
             </tr>
           </table>
           <h3>Disassembly</h3>

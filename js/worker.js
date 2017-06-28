@@ -61,7 +61,9 @@ class ExecutorRunner {
                 R6: r16(6),
                 R7: r16(7),
                 original_pc: program.original_pc,
-                original_cp: program.original_cp || "null"
+                original_cp: program.original_cp || "null",
+                lineage: program.lineage,
+                same_lineage: program.same_lineage
             },
             disassembly: Assembler.disassemble(ex.rv.forward_slice(100)),
             memory: ex.rv.buffer,

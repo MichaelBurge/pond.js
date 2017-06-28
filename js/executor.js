@@ -70,14 +70,15 @@ class PoolExecutor extends Executor {
             this.next_program();
         }
     }
-    spawn(pc, id) { let pr = new Program(this, id, this.guid++); pr.pc(pc); this._programs.push(pr); this.genebank.onspawn(pr);}
+    spawn(pc, id) { let pr = new Program(this, id, this.guid++); pr.pc(pc); this._programs.push(pr); this.genebank.onspawn(pr); return pr;}
     get_default_cp() { return Utils.random(0, this.memory.byteLength); }
     birth(parent, bytecode) {
+        let new_id = GeneBank.gene_id(bytecode);
         if (this.break_birth) { this.running = false; }
-        let pr = this.program();
-        pr.lineage = parent.lineage+1;
-        this.genebank.onbirth(pr,bytecode);
-        this.spawn(pr.original_cp, GeneBank.gene_id(bytecode));
+        let child = this.spawn(parent.original_cp, new_id);
+        child.same_lineage = (new_id == parent.id) ? (parent.same_lineage+1) : 0;
+        child.lineage = parent.lineage+1;
+        this.genebank.onbirth(child,bytecode);
     }
     should_reap() {
         let pr = this.program();
@@ -122,7 +123,7 @@ class GeneBank {
         this.reseed();
         // Settings
         this.max_genes = 1000;
-        this.min_lineage = 5;
+        this.min_lineage = 3;
         this.min_spawn_pct = 0.75;
         this.autoprune = true;
     }
@@ -161,11 +162,12 @@ class GeneBank {
         let gene_id = GeneBank.gene_id(bytecode);
         let gene = this.genes[gene_id];
         let should_add = true;
+        let lineage = program.same_lineage;
         should_add &= (program.id == gene_id);
         should_add &= (gene === undefined);
-        should_add &= (program.lineage >= this.min_lineage);
-        if (should_add) { this.add_gene(bytecode, program.lineage); }
-        if (gene) { gene.deepest_lineage =  Math.max(gene.deepest_lineage, program.lineage); }
+        should_add &= (lineage >= this.min_lineage);
+        if (should_add) { this.add_gene(bytecode, lineage); }
+        if (gene) { gene.deepest_lineage = Math.max(gene.deepest_lineage, lineage); }
     }
     should_prune(gene) {
         return this.autoprune &&

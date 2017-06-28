@@ -27,6 +27,8 @@ class Main {
         set("clocks_per_ms", view.clocks_per_ms);
         set("pc_root", rg.original_pc.toString(16));
         set("cp_root", rg.original_cp.toString(16));
+        set("lineage", rg.lineage.toString());
+        set("same_lineage", rg.same_lineage.toString());
         document.getElementById("assembler").value = view.disassembly;
         document.getElementById("memory").value = this.memory_view(view.memory);
         document.getElementById("child-memory").value = this.memory_view(view.child_memory);
