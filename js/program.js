@@ -7,6 +7,7 @@ FLAG_TEST = 0x01;
 
 class Program {
     constructor(executor, id, guid) {
+        TestUtils.assert_def(id);
         this.executor = executor;
         this.rv = executor.rv;
         this.reg8s = new Uint8Array(16);

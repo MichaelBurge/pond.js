@@ -7,6 +7,7 @@ class Main {
         this.running = true;
     }
     refresh(view) {
+        let main = this;
         let set = function(id,x) {
             document.getElementById(id).innerHTML = x;
         };
@@ -40,6 +41,29 @@ class Main {
             tr.appendChild(td4);
             programs.appendChild(tr);
         });
+        let genebank = document.getElementById("gene-bank");
+        genebank.innerHTML = "<tr><td>Gene ID</td><td># spawns</td><td># seeds</td><td></td></tr>";
+        view.gene_bank.pool.forEach(gene_id => {
+            let gene = view.gene_bank.genes[gene_id];
+            let tr = document.createElement("tr");
+            let td1 = document.createElement("td"); td1.innerText = gene_id;
+            let td2 = document.createElement("td"); td2.innerText = gene.num_spawns.toString();
+            let td3 = document.createElement("td"); td3.innerText = gene.num_gets.toString();
+            let td4 = document.createElement("td");
+            let btn_disassemble = document.createElement("button");
+            btn_disassemble.onclick = () => {
+                main.pause();
+                let disassembly = Assembler.disassemble(gene.bytecode);
+                document.getElementById("assembler").value = disassembly;
+            };
+            btn_disassemble.innerText = "Disassemble";
+            td4.appendChild(btn_disassemble);
+            tr.appendChild(td1);
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+            tr.appendChild(td4);
+            genebank.appendChild(tr);
+        });
     }
     memory_view(buffer, start, size) {
         let dv = new RingView(buffer, true);
@@ -71,6 +95,8 @@ class Main {
         this.refresh(e.data);
         window.requestAnimationFrame(() => { this.on_interval(); });
     }
+
+    pause() { this.running = false; }
     
     static bind() {
         main.worker = new Worker("js/worker.js");

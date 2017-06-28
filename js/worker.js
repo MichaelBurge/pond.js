@@ -59,7 +59,11 @@ class ExecutorRunner {
                 cycles: pr.num_clocks,
                 guid: pr.guid,
                 id: pr.id
-            }; })
+            }; }),
+            gene_bank: {
+                genes: ex.genebank.genes,
+                pool: ex.genebank.pool
+            }
         };
         return ret;
     }

@@ -83,7 +83,7 @@ class Test {
                 TestUtils.assert_equal(expected_asm, actual_asm, "");
             } else {
                 let actual_asm = Assembler.disassemble(actual_buffer);
-                let bytes = new Uint8Array(actual_buffer.buffer);
+                let bytes = new Uint8Array(actual_buffer);
                 TestUtils.assert_buffer_equal(expected_buffer, actual_buffer.slice(0, expected_buffer.byteLength), actual_asm);
                 TestUtils.assert_buffer_equal(expected_buffer, Assembler.assemble(actual_asm).slice(0, expected_buffer.byteLength), "");
             }
