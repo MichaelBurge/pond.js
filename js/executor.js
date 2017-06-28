@@ -55,9 +55,14 @@ class PoolExecutor extends Executor {
     programs() { return this._programs; }
     reap() { this._programs.shift(); this.next_program(); }
     kill() { this.reap(); }
-    spawn(pc, id) { let pr = new Program(this, id, this.guid++); pr.pc(pc); this._programs.push(pr); this.genebank.onspawn(id);}
-    birth(bytecode) { let pr = this.program(); this.genebank.onbirth(pr,bytecode);this.spawn(pr.original_cp, GeneBank.gene_id(bytecode));}
+    spawn(pc, id) { let pr = new Program(this, id, this.guid++); pr.pc(pc); this._programs.push(pr); this.genebank.onspawn(pr);}
     get_default_cp() { return Utils.random(0, this.memory.byteLength); }
+    birth(parent, bytecode) {
+        let pr = this.program();
+        pr.lineage = parent.lineage+1;
+        this.genebank.onbirth(pr,bytecode);
+        this.spawn(pr.original_cp, GeneBank.gene_id(bytecode));
+    }
     should_reap() {
         let pr = this.program();
         if (pr === undefined) { return false; }
@@ -90,16 +95,19 @@ class ProgramExecutor extends Executor {
 // Programs that successfully replicate themselves get added to a 'gene bank'
 class GeneBank {
     constructor(seed_bytecode) {
-        this.genes = {}; // { gene_id: { bytecode:, num_spawns:, num_gets: } }
+        this.genes = {}; // { gene_id: { bytecode:, num_spawns:, num_gets:, deepest_lineage: } }
         this.pool = []; // [ gene_id ]
         this.max_genes = 1000;
         this.add_gene(seed_bytecode);
     }
-    add_gene(bytecode) {
+    add_gene(bytecode, lineage) {
+        lineage = lineage || 0;
         let gene_id = GeneBank.gene_id(bytecode);
         this.pool.push(gene_id);
-        this.genes[gene_id] = { bytecode: bytecode, num_spawns: 0, num_gets: 0 };
+        let gene = { bytecode: bytecode, num_spawns: 0, num_gets: 0, deepest_lineage: lineage };
+        this.genes[gene_id] = gene
         if (this.genes.length > this.max_genes) { this.delete_gene(); }
+        return gene;
     }
     get_gene() {
         let gene_id = this.pool.shift();
@@ -117,13 +125,20 @@ class GeneBank {
             delete this.genes[gene_id];
         }
     }
-    onspawn(gene_id) {
+    onspawn(program) {
+        let gene_id = program.id;
         let gene = this.genes[gene_id];
         if (gene) { gene.num_spawns++; }
     }
     onbirth(program, bytecode) {
         let gene_id = GeneBank.gene_id(bytecode);
-        if (program.id == gene_id && this.genes[gene_id] === undefined) { this.add_gene(bytecode); }
+        let gene = this.genes[gene_id];
+        let should_add = true;
+        should_add &= program.id == gene_id;
+        should_add &= gene === undefined;
+        should_add &= program.lineage >= 3;
+        if (should_add) { this.add_gene(bytecode, program.lineage); }
+        if (gene) { gene.deepest_lineage =  Math.max(gene.deepest_lineage, program.lineage); }
     }
     static gene_id(bytecode) {
         return bytecode.byteLength.toString() + "~" + Utils.djb(bytecode).toString(16);

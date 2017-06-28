@@ -57,6 +57,7 @@ class ExecutorRunner {
             programs: ex.programs().map(pr => { return {
                 pc: pr.pc(),
                 cycles: pr.num_clocks,
+                lineage: pr.lineage,
                 guid: pr.guid,
                 id: pr.id
             }; }),

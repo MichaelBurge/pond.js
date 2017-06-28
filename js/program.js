@@ -18,6 +18,7 @@ class Program {
         this.id = id;
         this.guid = guid;
         this.num_clocks = 0;
+        this.lineage = 0;
     }
     step(rv) {
         this.rv.seek(this.pc());
@@ -69,7 +70,7 @@ class Program {
             return;
         } else {
             let child = this.rv.slice(this.original_cp, size);
-            this.executor.birth(child);
+            this.executor.birth(this, child);
         }
     }
     
