@@ -4,23 +4,23 @@ Programs compete for CPU in the same memory space. Demo: https://michaelburge.gi
 ## Interface
 These are the available panes to interact with the pond:
 * Gene Bank: Stores programs that have successfully copied themselves multiple times.
-.* The act of pulling a program from the Gene Bank, copying it into memory, and spawning a process is called "seeding".
-.* If there are no active programs, the executor will seed its memory.
-.* Every reseed_clocks cycles, the executor will seed its memory.
-.* Programs must maintain a 75% spawn/seed ratio to remain in the gene bank, to prevent lucky nonfunctional programs from forever being injected into memory.
-.* "Disassemble" will pause the Executor and load a disassembly of the stored bytecode into the Disassembly area
+ * The act of pulling a program from the Gene Bank, copying it into memory, and spawning a process is called "seeding".
+ * If there are no active programs, the executor will seed its memory.
+ * Every reseed_clocks cycles, the executor will seed its memory.
+ * Programs must maintain a 75% spawn/seed ratio to remain in the gene bank, to prevent lucky nonfunctional programs from forever being injected into memory.
+ * "Disassemble" will pause the Executor and load a disassembly of the stored bytecode into the Disassembly area
 * Active Programs: Shows a list of active processes.
-.* "Debug" will switch the context to the selected process, allowing you to step through it or view detailed information with the debugger.
-.* "Kill" will remove the program from the table
-.* "Program Hash" shows the id attribute
-.* "# cycles" shows the num_clocks attribute
-.* "Lineage Depth" shows the lineage attribute
+ * "Debug" will switch the context to the selected process, allowing you to step through it or view detailed information with the debugger.
+ * "Kill" will remove the program from the table
+ * "Program Hash" shows the id attribute
+ * "# cycles" shows the num_clocks attribute
+ * "Lineage Depth" shows the lineage attribute
 * Debugger: Allows you to see detailed information on a specific program, and step through it cycle-by-cycle.
-.* "Run" will cause the executor to repeatedly run for WORKER_TIMESLICE(=50) milliseconds and update the UI.
-.* "Step" will run the executor for a single cycle, which includes timeslicing between active programs.
-.* "Pause" will stop automatically running the executor.
-.* "Break on Birth" will run for WORKER_TIMESLICE milliseconds, or until a 'birth' instruction successfully creates a child process.
-.* "Disassembly" shows a disassembly of the range [pc, pc+100), or of a chosen program from the Gene Bank.
+ * "Run" will cause the executor to repeatedly run for WORKER_TIMESLICE(=50) milliseconds and update the UI.
+ * "Step" will run the executor for a single cycle, which includes timeslicing between active programs.
+ * "Pause" will stop automatically running the executor.
+ * "Break on Birth" will run for WORKER_TIMESLICE milliseconds, or until a 'birth' instruction successfully creates a child process.
+ * "Disassembly" shows a disassembly of the range [pc, pc+100), or of a chosen program from the Gene Bank.
 * Memory: Shows a hexadecimal display of the entire 64kb memory. Addresses are shown every 16 bytes on the left.
 * Child Memory: Shows a hexadecimal display of the current program's [cp_root, cp_root+256) region, which a subsequent 'birth' instruction will create a process from.
 ## Executor
@@ -76,16 +76,16 @@ An instruction may take arguments. These directly follow the instruction, and fa
 
 * 0x0: imm - 7-bit immediate. As an expr, evaluates to itself. As an lexpr, is interpreted as a relptr.
 * 0x1: reg8 - 16 registers. As an expr, evaluates to the register contents. As an lexpr, writes to the register.
-.* r0:r1=R0=pc is the program counter
-.* r2:r3=R1=sp is the stack pointer
-.* r4:r5=R2=cp is the child pc, set on program start and birth instruction
-.* r6 is the status register. There is only 1 status, the TEST flag.
-.* r7 is a new random number at each step
+ * r0:r1=R0=pc is the program counter
+ * r2:r3=R1=sp is the stack pointer
+ * r4:r5=R2=cp is the child pc, set on program start and birth instruction
+ * r6 is the status register. There is only 1 status, the TEST flag.
+ * r7 is a new random number at each step
 * 0x2: reg16 - 8 16-bit registers, acting as a different view of the 16 8-bit registers. expr/lexpr are read/write.
-.* Rn = rn:r[n+1], so R14 = r14:r15
+ * Rn = rn:r[n+1], so R14 = r14:r15
 * 0x3: relptr - Followed by a byte x. As an expr, evaluates to *(pc+x). As an lexpr, evaluates to the memory at pc+x.
 * 0x4: pattptr - Followed by a byte[4]. Does a linear search(max 256 bytes) in memory for the 4-byte pattern. As an expr, returns the value at that memory. As an lexpr, is a relptr pointing just past the pattern.
-.* pattptrs are relative to the end of the pattern, while npattptrs are relative to the start of the instruction.
+ * pattptrs are relative to the end of the pattern, while npattptrs are relative to the start of the instruction.
 * 0x3: nrelptr - Followed by a byte. Negative relptr
 * 0x5: npattptr - Followed by a byte[4]. Does a backward linear search(max 256), like pattptr.
 * 0x6: absptr - One for each 16-bit register r16. If r16 is the cp register, points to [cp_root + r16]. Otherwise, points to [pc_root + r16].
