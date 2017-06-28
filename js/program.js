@@ -13,14 +13,17 @@ class Program {
         this.reg16s = new Int16Array(this.reg8s.buffer);
         this.step_os = 0;
         this.original_cp = executor.get_default_cp();
+        this.cp(this.original_cp);
         this.id = id;
         this.guid = guid;
+        this.num_clocks = 0;
     }
     step(rv) {
         this.rv.seek(this.pc());
         this.step_os = this.rv.os;
         Assembler.isa_mapM(rv, this.evaluate_expression.bind(this), this.evaluate_instruction.bind(this));
         this.reg16s[REG16_PC] = rv.os;
+        this.num_clocks++;
     }
     
     evaluate_instruction(opcode, args) {
@@ -30,7 +33,7 @@ class Program {
             case 0x02: return this.add(args);
             case 0x03: return this.move(args);
             case 0x04: return this.sub(args);
-            case 0x05: return this.birth();
+            case 0x05: return this.birth(args);
             case 0x06: return this.xor(args);
             case 0x07: return this.and(args);
             case 0x08: return this.or(args);
@@ -59,10 +62,14 @@ class Program {
     birth(patt) {
         let program = this;
         let size = this.rv.with_absptr(this.original_cp, () => {
-            return this.rv.search(256, Utils.split_uint32(patt), 1) || 256;
+            return this.rv.search(256, Utils.split_uint32(patt), 1);
         });
-        let child = this.rv.slice(this.original_cp, size);
-        this.executor.birth(this);
+        if (size === null || size == 0) {
+            return;
+        } else {
+            let child = this.rv.slice(this.original_cp, size);
+            this.executor.birth(child);
+        }
     }
     
     add([src, dest]) { return this.binop_assign(src, dest, (a, b) => { return a + b; }); }
@@ -138,7 +145,9 @@ class Program {
                 default: throw "unknown exprclass";
             }
         };
-        return [ exprclass, get_values(), arg ];
+        let [x,y] = get_values();
+        TestUtils.assert_def(x); TestUtils.assert_def(y);
+        return [ exprclass, [x,y], arg ];
     };
     assign(val_exprclass, val, dest_exprclass, dest) {
         TestUtils.assert_def(val);
@@ -152,7 +161,7 @@ class Program {
             case EXPRCLASS_RELPTR: return this.rv.with_relptr(dest, () => { program.set_size(val_size, val); });
             case EXPRCLASS_PATTPTR:
             case EXPRCLASS_NPATTPTR:
-                let direction = (exprclass == EXPRCLASS_PATTPTR) ? 1 : -1;
+                let direction = (dest_exprclass == EXPRCLASS_PATTPTR) ? 1 : -1;
                 let relptr = this.search_patt(256, dest, direction);
                 return this.rv.with_relptr(relptr, () => { program.set_size(val_size, val); });
             case EXPRCLASS_ABSPTR: return this.rv.with_absptr(this.reg16s[dest], () => { program.set_size(val_size, val); });
@@ -184,9 +193,10 @@ class Program {
     }
     with_sp(os, block) {
         let program = this;
-        return this.rv.with_absptr(this.reg16s[REG16_SP], () => {
+        let sp = this.reg16s[REG16_SP]; TestUtils.assert_def(sp);
+        return this.rv.with_absptr(sp, () => {
             return program.rv.with_relptr(os, () => {
-                block();
+                return block();
             });
         });
     }
@@ -208,7 +218,10 @@ class Program {
         if (value > 0) { this.reg8s[REG8_STATUS] |= flag; }
         else { this.reg8s[REG8_STATUS] &= ~flag; }
     }
-    pc() { return this.reg16s[REG16_PC]; }
+    pc(x) {
+        if (x == undefined) { return this.reg16s[REG16_PC]; }
+        else { return this.reg16s[REG16_PC] = x; }
+    }
     cp(x) {
         if (x === undefined) { return this.reg16s[REG16_CP]; }
         else { this.reg16s[REG16_CP] = x;

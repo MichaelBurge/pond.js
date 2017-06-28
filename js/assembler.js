@@ -139,6 +139,7 @@ class Assembler {
 
     static expr_mapM(dv, expr_act) {
         let arg1 = dv.getUint8();
+        TestUtils.assert_def(arg1);
         if (arg1 < 128) {
             return expr_act(EXPRCLASS_IMM, arg1);
         } else if (arg1 < 144) {

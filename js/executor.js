@@ -8,7 +8,7 @@ class Executor {
             this.step();
         }
     }
-    id(bytecode) { return Utils.djb(bytecode).toString(16); }
+    id(bytecode) { return bytecode.byteLength.toString() + "~" + Utils.djb(bytecode).toString(16); }
     // Required by children
     step() { }
     kill() {}
@@ -30,7 +30,8 @@ class PoolExecutor extends Executor {
         // Settings
         this.max_programs = 10;
         this.timeslice_size = 10;
-
+        this.max_clocks = 1000;
+        
         this.seed();
     }
     step() {
@@ -41,17 +42,28 @@ class PoolExecutor extends Executor {
         if (this._programs.length == 0) { this.seed(); }
     }
 
-    seed() { let bytecode = this.pool[0]; this.spawn(this.rv.os, this.id(bytecode)); this.inject(bytecode); }
+    seed() {
+        let bytecode = this.pool[0];
+        let pc = Utils.random(0,this.memory.byteLength);
+        this.rv.seek(pc);
+        this.spawn(pc, this.id(bytecode));
+        this.inject(bytecode);
+    }
     inject(bytecode) { new RingView(bytecode).copy(this.rv, bytecode.byteLength); }
     program() { return this._programs[this.pid]; }
-    next_program() { this.pid = (this.pid + 1) % this._programs.length; this.timeslice_cycle = 0; }
+    next_program() { this.pid = (this.pid + 1) % (this._programs.length || 1); this.timeslice_cycle = 0; }
     programs() { return this._programs; }
-    reap() { this._programs.shift(); this.pid %= this._programs.length; }
+    reap() { this._programs.shift(); this.next_program(); }
     kill() { this.reap(); }
-    should_reap() { return this._programs.length > this.max_programs; }
     spawn(pc, id) { let pr = new Program(this, id, this.guid++); pr.pc(pc); this._programs.push(pr); }
     birth(bytecode) { this.spawn(this.program().original_cp, this.id(bytecode)); }
     get_default_cp() { return Utils.random(0, this.memory.byteLength); }
+    should_reap() {
+        let pr = this.program();
+        if (pr === undefined) { return false; }
+        return this._programs.length > this.max_programs ||
+               pr.num_clocks > this.max_clocks;
+    }
 }
 
 // Designed for executing single programs

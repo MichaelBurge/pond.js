@@ -9,9 +9,10 @@
     table, tr, td {
     border: 1px solid black;
     }
-    .pane { width: 49%; border: 1px solid black; }
+    .pane { width: 49%; border: 1px solid black; height: 50%;}
     h3 { text-align: center; display: flex; justify-content: space-around; }
     textarea { display: block; width: 100%; min-height: 10em; }
+    #assembler { height: 50%; }
   </style>
   <body id="pond-root">
     <!-- <h3>If you're on Chrome, enable ES6</h3> -->
@@ -19,6 +20,10 @@
     <!--   <tr><td>Chrome</td><td>chrome://flags/#enable-javascript-harmony</td></tr> -->
     <!-- </table> -->
     <main>
+      <div class="pane">
+        <h3>Memory(Colored View)</h3>
+        <canvas id="memory-canvas"></canvas>
+      </div>
       <div class="pane">
         <h3>Active Programs</h3>
         <table id="programs">

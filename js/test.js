@@ -48,7 +48,19 @@ class Test {
                 let relptr = rv.search(10, [5,6,7,8], -1);
                 TestUtils.assert_equal(-4, relptr, "");
             }
-            
+        }
+        // Check #4: Sharing buffer
+        {
+            let buf = new ArrayBuffer(2);
+            let a8 = new Uint8Array(buf);
+            let a16 = new Uint16Array(buf);
+            a16[0] = 0xaeae;
+            TestUtils.assert_equal(a8[0], 0xae);
+            TestUtils.assert_equal(a8[1], 0xae);
+            a16[0] = 0;
+            a8[0] = 0xae;
+            a8[1] = 0xae;
+            TestUtils.assert_equal(a16[0], 0xaeae);
         }
     }
     static test_instructions() {

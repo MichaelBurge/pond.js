@@ -37,7 +37,7 @@ class ExecutorRunner {
         let inst = ex.rv.with_relptr(0, () => Assembler.disassemble_instruction(ex.rv));
         let r8 = n => { return program.reg8s[n].toString(); };
         let r16 = n => { return program.reg16s[n].toString(); };
-        return {
+        let ret = {
             guid: program.guid.toString(10),
             inst: inst,
             registers: {
@@ -52,30 +52,16 @@ class ExecutorRunner {
                 R7: r16(7)
             },
             disassembly: Assembler.disassemble(ex.rv.forward_slice(100)),
-            memory: this.memory_view(ex.rv.buffer),
-            child_memory: this.memory_view(ex.rv.buffer, program.original_cp, 256),
+            memory: ex.rv.buffer,
+            child_memory: ex.rv.slice(program.original_cp, 256),
             programs: ex.programs().map(pr => { return {
+                pc: pr.pc(),
+                cycles: pr.num_clocks,
                 guid: pr.guid,
-                id: ex.id(pr)
+                id: pr.id
             }; })
         };
-    }
-    memory_view(buffer, start, size) {
-        let dv = new RingView(buffer, true);
-        let output = "";
-        start = (start === undefined) ? 0 : start;
-        size = (size === undefined) ? buffer.byteLength : size;
-        let padding = start % 16;
-        start -= padding;
-        size += padding;
-        for (let os = start; size --> 0; os++) {
-            if (os % 16 == 0) { output += Utils.pad2(os.toString(16)) +": " }
-            let byte = dv.getUint8(os);
-            output += Utils.pad2(byte.toString(16));
-            if (os % 16 == 15) { output += "\n"; }
-            else { output += " "; }
-        }
-        return output;
+        return ret;
     }
 }
 var runner = new ExecutorRunner();

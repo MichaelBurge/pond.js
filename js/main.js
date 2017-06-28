@@ -23,21 +23,41 @@ class Main {
         set("R6", rg.R6);
         set("R7", rg.R7);
         document.getElementById("assembler").value = view.disassembly;
-        document.getElementById("memory").value = view.memory;
-        document.getElementById("child-memory").value = view.child_memory;
+        document.getElementById("memory").value = this.memory_view(view.memory);
+        document.getElementById("child-memory").value = this.memory_view(view.child_memory);
         let programs = document.getElementById("programs");
-        programs.innerHTML = '<tr><td>Program #</td><td>Program Hash</td></tr>';
+        programs.innerHTML = '<tr><td>Program #</td><td>Program Hash</td><td>pc</td><td># cycles</td></tr>';
         
         view.programs.forEach(prv => {
             let tr = document.createElement("tr");
             let td1 = document.createElement("td"); td1.innerText = prv.guid.toString();
             let td2 = document.createElement("td"); td2.innerText = prv.id.toString();
+            let td3 = document.createElement("td"); td3.innerText = prv.pc.toString(16);
+            let td4 = document.createElement("td"); td4.innerText = prv.cycles.toString();
             tr.appendChild(td1);
             tr.appendChild(td2);
+            tr.appendChild(td3);
+            tr.appendChild(td4);
             programs.appendChild(tr);
         });
     }
-    
+    memory_view(buffer, start, size) {
+        let dv = new RingView(buffer, true);
+        let output = "";
+        start = (start === undefined) ? 0 : start;
+        size = (size === undefined) ? buffer.byteLength : size;
+        let padding = start % 16;
+        start -= padding;
+        size += padding;
+        for (let os = start; size --> 0; os++) {
+            if (os % 16 == 0) { output += Utils.pad2(os.toString(16)) +": " }
+            let byte = dv.getUint8(os);
+            output += Utils.pad2(byte.toString(16));
+            if (os % 16 == 15) { output += "\n"; }
+            else { output += " "; }
+        }
+        return output;
+    }
     on_interval() {
         if (this.running) {
             this.worker.postMessage([ "runTime", WORKER_TIMESLICE ]);
@@ -60,13 +80,18 @@ class Main {
          *     let asm = document.getElementById("assembler").value;
          *     main.load_asm(asm);
          * };*/
+        document.getElementById("btn-pause").onclick = function() {
+            main.running = false;
+        };
         document.getElementById("btn-step").onclick = function() {
-            main.executor.step();
-            main.refresh();
+            main.worker.postMessage([ "step" ]);
         };
         document.getElementById("btn-run").onclick = function() {
-            main.executor.run(300);
-            main.refresh();
+            main.running = true;
+            window.requestAnimationFrame(() => { main.on_interval(); });
+        };
+        document.getElementById("btn-run300").onclick = function() {
+            main.worker.postMessage([ "run300" ]);
         };
     }
 }

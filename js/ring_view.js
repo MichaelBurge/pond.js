@@ -111,7 +111,13 @@ class RingView {
             return this.os + os;
         }
     }
-    seek(x) { this.os = x; }
+    seek(x) {
+        if (x >= 0) {
+            this.os = x;
+        } else {
+            this.os = x % this.buffer.byteLength;
+        }
+    }
     search(max, patt, direction) {
         let rv = this;
         for (let os = 0; os < max; os++) {
