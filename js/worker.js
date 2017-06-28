@@ -12,19 +12,24 @@ class ExecutorRunner {
     constructor() {
         let bytecode = Assembler.assemble(Test.copier_program());        
         this.executor = new PoolExecutor(bytecode);
+        this.clocks_per_ms = 0;
     }
     on_message(e) {
         let [ msg, arg ] = e.data;
         let ex = this.executor;
+        this.clocks_per_ms = 0;
         switch (msg) {
             case "step": ex.step(); break;
             case "run300": ex.run(300); break;
             case "runTime":
                 {
                     let startTime = Date.now();
+                    let start_clocks = ex.total_clocks;
                     while ((Date.now() - startTime) < arg) {
                         ex.step();
                     }
+                    let num_clocks = ex.total_clocks - start_clocks;
+                    this.clocks_per_ms = num_clocks / arg;
                 }
                 break;
             default: throw "unknown event" + msg;
@@ -38,6 +43,8 @@ class ExecutorRunner {
         let r8 = n => { return program.reg8s[n].toString(); };
         let r16 = n => { return program.reg16s[n].toString(); };
         let ret = {
+            total_clocks: ex.total_clocks,
+            clocks_per_ms: this.clocks_per_ms,
             guid: program.guid.toString(10),
             inst: inst,
             registers: {

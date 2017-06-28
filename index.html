@@ -32,12 +32,11 @@
         </table>
       </div>
       </div>
-      <div class="pane">
-        <!-- <h3>Assembler <button id="btn-assemble">Assemble</button></h3> -->
-        <h3>Assembler</h3>
-        <textarea id="assembler" rows="10">
-        </textarea>
-      </div>
+      <!-- <div class="pane"> -->
+      <!--   <\!-- <h3>Assembler <button id="btn-assemble">Assemble</button></h3> -\-> -->
+      <!--   <h3>Assembler</h3> -->
+
+      <!-- </div> -->
       <div class="pane">
         <h3>Debugger <button id="btn-run">Run</button><button id="btn-pause">Pause</button><button id="btn-run300">Run(300 steps)</button><button id="btn-step">Step</button></h3>
         <div id="debugger">
@@ -57,7 +56,14 @@
               <td>r12:r13(R6)</td><td id="R6"></td>
               <td>r14:r15(R7)</td><td id="R7"></td>
             </tr>
+            <tr>
+              <td># Clocks</td><td id="total_clocks"></td>
+              <td>Clocks/ms</td><td id="clocks_per_ms"></td>
+            </tr>
           </table>
+          <h3>Disassembly</h3>
+          <textarea id="assembler" rows="10">
+          </textarea>
         </div>
       </div>
       <div class="pane">

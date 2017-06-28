@@ -19,6 +19,8 @@ class Program {
         this.guid = guid;
         this.num_clocks = 0;
         this.lineage = 0;
+        // Settings
+        this.max_child_size = 256;
     }
     step(rv) {
         this.rv.seek(this.pc());
@@ -62,11 +64,9 @@ class Program {
     }
 
     birth(patt) {
-        let program = this;
-        let size = this.rv.with_absptr(this.original_cp, () => {
-            return this.rv.search(256, Utils.split_uint32(patt), 1);
-        });
-        if (size === null || size == 0) {
+        let cp = this.cp();
+        let size = this.rv.ptr_diff(this.original_cp, cp);
+        if (size === null || size == 0 || size > this.max_child_size) {
             return;
         } else {
             let child = this.rv.slice(this.original_cp, size);

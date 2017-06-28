@@ -23,6 +23,8 @@ class Main {
         set("R5", rg.R5);
         set("R6", rg.R6);
         set("R7", rg.R7);
+        set("total_clocks", view.total_clocks);
+        set("clocks_per_ms", view.clocks_per_ms);
         document.getElementById("assembler").value = view.disassembly;
         document.getElementById("memory").value = this.memory_view(view.memory);
         document.getElementById("child-memory").value = this.memory_view(view.child_memory);

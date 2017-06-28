@@ -1,6 +1,7 @@
 class Executor {
     constructor() {
         this.running = true;
+        this.total_clocks = 0;
     }
     run(max_steps) {
         let num_steps = 0;
@@ -10,7 +11,7 @@ class Executor {
     }
     id(bytecode) { GeneBank.gene_id(bytecode); }
     // Required by children
-    step() { }
+    step() { this.total_clocks++; }
     kill() {}
     birth(bytecode) {}
     guid(program ) {}
@@ -35,6 +36,7 @@ class PoolExecutor extends Executor {
         this.seed();
     }
     step() {
+        super.step();
         let pr = this.program();
         pr.step(this.rv);
         if (this.timeslice_cycle++ >= this.timeslice_size) { this.next_program(); }
@@ -84,7 +86,7 @@ class ProgramExecutor extends Executor {
         this.child = null;
     }
     get_child() { return this.child; }
-    step() { this._program.step(this.rv); }
+    step() { super.step(); this._program.step(this.rv); }
     kill(program) { this.running = false; }
     birth(bytecode) { this.child = bytecode; }
     program() { return this._program; }

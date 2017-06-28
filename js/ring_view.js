@@ -111,6 +111,10 @@ class RingView {
             return this.os + os;
         }
     }
+    eval_absptr(absptr) {
+        if (absptr < 0) { return this.byteLength - absptr; }
+        else { return absptr; }
+    }
     seek(x) {
         if (x >= 0) {
             this.os = x;
@@ -156,5 +160,11 @@ class RingView {
     }
     forward_slice(size) {
         return this.slice(this.os, size);
+    }
+    ptr_diff(a, b) {
+        a = this.eval_absptr(a);
+        b = this.eval_absptr(b);
+        if (a < b) { return b - a; }
+        else { return (this.byteLength - a) + b; }
     }
 }
