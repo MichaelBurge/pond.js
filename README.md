@@ -1,5 +1,5 @@
 # pond.js
-Programs compete for CPU in the same memory space
+Programs compete for CPU in the same memory space. Demo: https://michaelburge.github.io/pond.js/
 
 ## Interface
 These are the available panes to interact with the pond:
